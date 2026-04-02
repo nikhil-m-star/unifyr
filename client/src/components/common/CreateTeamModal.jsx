@@ -5,87 +5,182 @@ import { Check, Trash2, Users, X } from 'lucide-react';
 import axios from '../../api/axios';
 import useIsMobile from '../../hooks/useIsMobile';
 
-const ManageTeamCard = ({ team, onAction, busyId }) => (
-  <div style={{ border: '1px solid var(--glass-border)', borderRadius: '22px', padding: '1rem', background: 'rgba(255,255,255,0.03)' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-      <div>
-        <div className="team-card__title" style={{ marginBottom: '0.2rem' }}>{team.team_name || team.teamName}</div>
-        <div className="team-card__event">{team.event_name || team.eventName}</div>
-      </div>
-      <span className="chip" style={{ background: team.status === 'closed' ? 'rgba(244,114,182,0.12)' : 'rgba(45,212,191,0.12)', color: team.status === 'closed' ? 'var(--accent-rose)' : 'var(--accent-teal)' }}>
-        {team.status || 'open'}
-      </span>
-    </div>
+const ManageTeamCard = ({ team, onAction, busyId }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    teamName: team.team_name || team.teamName || '',
+    description: team.description || '',
+    lookingFor: team.looking_for || team.lookingFor || '',
+  });
 
-    <p className="team-card__body" style={{ margin: '1rem 0' }}>{team.description || 'No description yet.'}</p>
+  const handleEditChange = (event) => {
+    setEditForm({ ...editForm, [event.target.name]: event.target.value });
+  };
 
-    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-      <button
-        type="button"
-        className="btn-secondary"
-        onClick={() => onAction('status', team.id, { status: team.status === 'open' ? 'closed' : 'open' })}
-        disabled={busyId === `status-${team.id}`}
-      >
-        {team.status === 'open' ? 'Close post' : 'Reopen post'}
-      </button>
-      <button
-        type="button"
-        className="btn-ghost"
-        onClick={() => onAction('delete', team.id)}
-        disabled={busyId === `delete-${team.id}`}
-      >
-        <Trash2 size={16} /> Delete
-      </button>
-    </div>
+  const handleUpdate = async (event) => {
+    event.preventDefault();
+    await onAction('update', team.id, editForm);
+    setIsEditing(false);
+  };
 
-    <div>
-      <div className="section-kicker" style={{ marginBottom: '0.75rem' }}>Pitches</div>
-      {team.requests?.length ? (
-        <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {team.requests.map((request) => (
-            <div key={request.id} style={{ borderRadius: '18px', padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
-                <div>
-                  <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{request.sender_name || 'Applicant'}</div>
-                  <div className="text-badge">{request.sender_email || request.sender_role || 'Pending pitch'}</div>
-                </div>
-                <span className="text-badge" style={{ textTransform: 'capitalize' }}>{request.status}</span>
-              </div>
-              <p style={{ color: 'var(--text-secondary)', margin: '0.75rem 0 0' }}>{request.pitch}</p>
-              {request.status === 'pending' && (
-                <div style={{ display: 'flex', gap: '0.65rem', marginTop: '0.85rem', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={() => onAction('request', request.id, { status: 'accepted' })}
-                    disabled={busyId === `request-${request.id}`}
-                  >
-                    <Check size={16} /> Accept
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => onAction('request', request.id, { status: 'rejected' })}
-                    disabled={busyId === `request-${request.id}`}
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+  return (
+    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '22px', padding: '1.25rem', background: 'rgba(255,255,255,0.03)' }}>
+      {isEditing ? (
+        <form onSubmit={handleUpdate} className="form-stack">
+          <div className="section-kicker" style={{ marginBottom: '1rem' }}>Edit teammate post</div>
+          <div className="field">
+            <label htmlFor={`edit-teamName-${team.id}`}>Team name</label>
+            <input
+              id={`edit-teamName-${team.id}`}
+              name="teamName"
+              className="app-input"
+              value={editForm.teamName}
+              onChange={handleEditChange}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor={`edit-lookingFor-${team.id}`}>Looking for</label>
+            <input
+              id={`edit-lookingFor-${team.id}`}
+              name="lookingFor"
+              className="app-input"
+              value={editForm.lookingFor}
+              onChange={handleEditChange}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor={`edit-description-${team.id}`}>Description</label>
+            <textarea
+              id={`edit-description-${team.id}`}
+              name="description"
+              className="app-input"
+              rows={3}
+              value={editForm.description}
+              onChange={handleEditChange}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="submit" className="btn-primary" disabled={busyId === `update-${team.id}`}>
+              {busyId === `update-${team.id}` ? 'Saving...' : 'Save changes'}
+            </button>
+            <button type="button" className="btn-ghost" onClick={() => setIsEditing(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
       ) : (
-        <div className="text-badge">No pitches yet.</div>
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
+            <div>
+              <div className="team-card__title" style={{ marginBottom: '0.2rem' }}>{team.team_name || team.teamName}</div>
+              <div className="team-card__event">{team.event_name || team.eventName}</div>
+            </div>
+            <span className="chip" style={{ background: team.status === 'closed' ? 'rgba(244,114,182,0.12)' : 'rgba(45,212,191,0.12)', color: team.status === 'closed' ? 'var(--accent-rose)' : 'var(--accent-teal)' }}>
+              {team.status || 'open'}
+            </span>
+          </div>
+
+          <p className="team-card__body" style={{ margin: '1rem 0' }}>{team.description || 'No description yet.'}</p>
+          
+          {team.looking_for && (
+             <div className="team-card__tags" style={{ marginBottom: '1rem' }}>
+               <span className="chip" style={{ background: 'rgba(255,255,255,0.05)', fontSize: '0.75rem' }}>
+                 Looking for: {team.looking_for}
+               </span>
+             </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => onAction('status', team.id, { status: team.status === 'open' ? 'closed' : 'open' })}
+              disabled={busyId === `status-${team.id}`}
+            >
+              {team.status === 'open' ? 'Close post' : 'Reopen post'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setIsEditing(true)}
+              disabled={busyId?.includes(team.id)}
+            >
+              Edit details
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => onAction('delete', team.id)}
+              disabled={busyId === `delete-${team.id}`}
+              style={{ color: 'var(--accent-rose)', marginLeft: 'auto' }}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem' }}>
+            <div className="section-kicker" style={{ marginBottom: '1rem' }}>Pitches ({team.requests?.length || 0})</div>
+            {team.requests?.length ? (
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                {team.requests.map((request) => (
+                  <div key={request.id} style={{ borderRadius: '18px', padding: '1rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
+                          {request.sender_name?.charAt(0) || 'A'}
+                        </div>
+                        <div>
+                          <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>{request.sender_name || 'Applicant'}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{request.sender_role || 'Student'}</div>
+                        </div>
+                      </div>
+                      <span className={`chip status-${request.status}`} style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {request.status}
+                      </span>
+                    </div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5 }}>{request.pitch}</p>
+                    {request.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                          onClick={() => onAction('request', request.id, { status: 'accepted' })}
+                          disabled={busyId === `request-${request.id}`}
+                        >
+                          <Check size={14} /> Accept
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost"
+                          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                          onClick={() => onAction('request', request.id, { status: 'rejected' })}
+                          disabled={busyId === `request-${request.id}`}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '18px', border: '1px dashed var(--glass-border)' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No pitches yet. Shares your post to get discovered!</p>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
-  </div>
-);
+  );
+};
 
-const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
+const CreateTeamModal = ({ isOpen, onClose, onCreated, initialTab = 'create' }) => {
   const [form, setForm] = useState({ eventName: '', teamName: '', description: '', lookingFor: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('create');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [myTeams, setMyTeams] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [busyId, setBusyId] = useState(null);
@@ -96,6 +191,12 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value });
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -187,6 +288,9 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
       }
       if (type === 'status') {
         await axios.patch(`/teams/${id}/status`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      }
+      if (type === 'update') {
+        await axios.put(`/teams/${id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
       }
       if (type === 'delete') {
         await axios.delete(`/teams/${id}`, { headers: { Authorization: `Bearer ${token}` } });

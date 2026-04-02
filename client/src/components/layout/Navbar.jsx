@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Compass, MapPin, Menu, Radar, Users, X } from 'lucide-react';
+import { Compass, Edit, MapPin, Menu, Radar, Users, X } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -15,9 +15,13 @@ const NavItems = ({ onClose, onTeammatesClick, isMobile = false }) => (
       Discover
     </NavLink>
     <SignedIn>
-      <button type="button" onClick={onTeammatesClick} className={isMobile ? 'nav-link nav-link--mobile' : 'nav-link'}>
+      <button type="button" onClick={() => onTeammatesClick('create')} className={isMobile ? 'nav-link nav-link--mobile' : 'nav-link'}>
         <Users size={18} />
         Teammates
+      </button>
+      <button type="button" onClick={() => onTeammatesClick('manage')} className={isMobile ? 'nav-link nav-link--mobile' : 'nav-link'}>
+        <Edit size={18} />
+        Manage
       </button>
     </SignedIn>
     <SignedOut>
@@ -36,10 +40,12 @@ const NavItems = ({ onClose, onTeammatesClick, isMobile = false }) => (
 const Navbar = ({ onTeamCreated }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const [modalInitialTab, setModalInitialTab] = useState('create');
   const isMobile = useIsMobile();
 
-  const openTeammatesModal = () => {
+  const openTeammatesModal = (tab = 'create') => {
     setMobileOpen(false);
+    setModalInitialTab(tab);
     setIsCreateTeamOpen(true);
   };
 
@@ -135,6 +141,7 @@ const Navbar = ({ onTeamCreated }) => {
 
       <CreateTeamModal
         isOpen={isCreateTeamOpen}
+        initialTab={modalInitialTab}
         onClose={() => setIsCreateTeamOpen(false)}
         onCreated={() => {
           onTeamCreated?.();

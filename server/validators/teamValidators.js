@@ -20,9 +20,16 @@ const updateTeamStatusSchema = z.object({
   status: z.enum(['open', 'closed'])
 });
 
+const updateTeamSchema = z.object({
+  teamName: z.string().min(2).max(255),
+  description: z.string().optional(),
+  lookingFor: z.string().optional()
+});
+
 module.exports = {
   createTeamSchema,
   joinRequestSchema,
   processRequestSchema,
-  updateTeamStatusSchema
+  updateTeamStatusSchema,
+  updateTeamSchema
 };

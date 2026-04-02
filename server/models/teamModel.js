@@ -39,6 +39,12 @@ const updateTeamStatus = async (id, status) => {
   return rows[0];
 };
 
+const updateTeam = async (id, teamName, description, lookingFor) => {
+  const query = 'UPDATE teams SET team_name = $1, description = $2, looking_for = $3 WHERE id = $4 RETURNING *';
+  const { rows } = await pool.query(query, [teamName, description, lookingFor, id]);
+  return rows[0];
+};
+
 const deleteTeam = async (id) => {
   const query = 'DELETE FROM teams WHERE id = $1 RETURNING *';
   const { rows } = await pool.query(query, [id]);
@@ -73,6 +79,7 @@ module.exports = {
   getTeamsByEvent,
   getTeamById,
   updateTeamStatus,
+  updateTeam,
   deleteTeam,
   getTeamsByCreator,
   getAllTeams

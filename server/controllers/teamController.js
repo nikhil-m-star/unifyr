@@ -129,6 +129,28 @@ const updateMyTeamStatus = async (req, res) => {
   }
 };
 
+const updateMyTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { teamName, description, lookingFor } = req.body;
+    const team = await teamModel.getTeamById(teamId);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    if (team.creator_id !== req.dbUser.id) {
+      return res.status(403).json({ message: 'Only the creator can edit this teammate post.' });
+    }
+
+    const updatedTeam = await teamModel.updateTeam(teamId, teamName, description, lookingFor);
+    res.status(200).json({ message: 'Teammate post updated', team: updatedTeam });
+  } catch (error) {
+    console.error('Update Team Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 const deleteMyTeam = async (req, res) => {
   try {
     const { teamId } = req.params;
@@ -158,5 +180,6 @@ module.exports = {
   createJoinRequest,
   processJoinRequest,
   updateMyTeamStatus,
+  updateMyTeam,
   deleteMyTeam
 };

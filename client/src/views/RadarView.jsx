@@ -19,6 +19,59 @@ const RadarView = () => {
   const normalizedTopic = topic.trim().replace(/\s+/g, ' ').toLowerCase();
 
   useEffect(() => {
+    if (!isSignedIn || socketRef.current) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const connectPresenceSocket = async () => {
+      try {
+        const token = await getToken();
+
+        if (!isMounted || !token || socketRef.current) {
+          return;
+        }
+
+        const newSocket = io(API_ORIGIN, {
+          auth: { token },
+        });
+
+        socketRef.current = newSocket;
+
+        newSocket.on('match_success', ({ sessionId: matchedSessionId, partner: matchedPartner }) => {
+          setPartner(matchedPartner);
+          setSessionId(matchedSessionId);
+          setStatus('matched');
+        });
+
+        newSocket.on('queue_error', ({ message }) => {
+          console.error('Matchmaking queue error:', message);
+          setStatus('idle');
+          alert(message || 'Unable to join the matchmaking queue right now.');
+        });
+
+        newSocket.on('connect_error', (error) => {
+          console.error('Presence socket connection error:', error);
+        });
+      } catch (error) {
+        console.error('Failed to connect presence socket:', error);
+      }
+    };
+
+    connectPresenceSocket();
+
+    return () => {
+      isMounted = false;
+
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [getToken, isSignedIn]);
+
+  useEffect(() => {
     if (!isSignedIn) {
       return undefined;
     }
@@ -54,66 +107,22 @@ const RadarView = () => {
       return undefined;
     }
 
-    let isMounted = true;
+    if (!socketRef.current) {
+      return undefined;
+    }
 
-    const connectSocket = async () => {
-      try {
-        const token = await getToken();
-
-        if (!isMounted || !token) {
-          setStatus('idle');
-          return;
-        }
-
-        const newSocket = io(API_ORIGIN, {
-          auth: { token },
-        });
-
-        socketRef.current = newSocket;
-
-        newSocket.on('connect', () => {
-          newSocket.emit('join_queue', { topicKeywords: normalizedTopic });
-        });
-
-        newSocket.on('queue_joined', () => {
-          setStatus('waiting');
-        });
-
-        newSocket.on('match_success', ({ sessionId: matchedSessionId, partner: matchedPartner }) => {
-          setPartner(matchedPartner);
-          setSessionId(matchedSessionId);
-          setStatus('matched');
-        });
-
-        newSocket.on('queue_error', ({ message }) => {
-          console.error('Matchmaking queue error:', message);
-          setStatus('idle');
-          alert(message || 'Unable to join the matchmaking queue right now.');
-        });
-
-        newSocket.on('connect_error', (error) => {
-          console.error('Failed to connect to matchmaking server:', error);
-          setStatus('idle');
-          socketRef.current = null;
-          alert(error?.message || 'Unable to connect to the matchmaking server.');
-        });
-      } catch (error) {
-        console.error('Failed to start matchmaking:', error);
-        setStatus('idle');
-      }
+    const activeSocket = socketRef.current;
+    const handleQueueJoined = () => {
+      setStatus('waiting');
     };
 
-    connectSocket();
+    activeSocket.on('queue_joined', handleQueueJoined);
+    activeSocket.emit('join_queue', { topicKeywords: normalizedTopic });
 
     return () => {
-      isMounted = false;
-
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      activeSocket.off('queue_joined', handleQueueJoined);
     };
-  }, [getToken, normalizedTopic, status]);
+  }, [normalizedTopic, status]);
 
   const handleJoinQueue = (event) => {
     event.preventDefault();
@@ -124,8 +133,6 @@ const RadarView = () => {
   const handleLeaveQueue = () => {
     if (socketRef.current) {
       socketRef.current.emit('leave_queue');
-      socketRef.current.disconnect();
-      socketRef.current = null;
     }
 
     setIsChatOpen(false);
@@ -196,13 +203,13 @@ const RadarView = () => {
                 </button>
               </form>
 
-              {activeUsers.length > 0 && (
-                <div style={{ marginTop: '2rem', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', gap: '1rem' }}>
-                    <div className="section-kicker">Active now</div>
-                    <span className="text-badge">{activeUsers.length} online</span>
-                  </div>
+              <div style={{ marginTop: '2rem', textAlign: 'left' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem', gap: '1rem' }}>
+                  <div className="section-kicker">Active now</div>
+                  <span className="text-badge">{activeUsers.length} online</span>
+                </div>
 
+                {activeUsers.length > 0 ? (
                   <div style={{ display: 'grid', gap: '0.75rem' }}>
                     {activeUsers.slice(0, 5).map((activeUser) => (
                       <div
@@ -253,8 +260,21 @@ const RadarView = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div
+                    style={{
+                      padding: '1rem 1.1rem',
+                      borderRadius: '18px',
+                      border: '1px solid var(--glass-border)',
+                      background: 'rgba(255,255,255,0.03)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.92rem',
+                    }}
+                  >
+                    No other active users yet. Open Match in another signed-in browser to test this.
+                  </div>
+                )}
+              </div>
             </GlassCard>
           </motion.div>
         )}

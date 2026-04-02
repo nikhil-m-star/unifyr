@@ -54,6 +54,13 @@ const syncUserFromClerk = async (clerkId, claims = {}) => {
 
   const normalizedEmail = profile.email || getFallbackEmail(clerkId);
 
+  // Enforce BMSCE domain restriction for all users except existing ones
+  if (!normalizedEmail.endsWith('@bmsce.ac.in') && clerkId.startsWith('user_')) {
+    const error = new Error('Access restricted to bmsce.ac.in institutional emails only.');
+    error.status = 403;
+    throw error;
+  }
+
   return userModel.createUser(clerkId, profile.name || 'User', normalizedEmail, profile.profilePic || '');
 };
 

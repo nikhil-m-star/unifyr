@@ -21,6 +21,9 @@ const syncUser = async (req, res, next) => {
     req.dbUser = user; // Attach local DB user
     next();
   } catch (error) {
+    if (error.status === 403) {
+      return res.status(403).json({ message: error.message });
+    }
     console.error('Sync user error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }

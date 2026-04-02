@@ -350,6 +350,24 @@ img {
   color: var(--text-secondary);
 }
 
+.auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.auth-switch__link {
+  color: #ddd1ff;
+  font-weight: 800;
+}
+
+.auth-switch__link:hover {
+  color: #ffffff;
+}
+
 .auth-panel {
   position: relative;
   padding: 30px;

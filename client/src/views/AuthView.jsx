@@ -1,6 +1,6 @@
 import React from 'react';
 import { SignIn, SignUp } from '@clerk/clerk-react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const AuthView = () => {
@@ -40,6 +40,13 @@ const AuthView = () => {
               fallbackRedirectUrl="/"
             />
           )}
+        </div>
+
+        <div className="auth-switch">
+          <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
+          <Link to={isSignUp ? '/auth' : '/auth?mode=signup'} className="auth-switch__link">
+            {isSignUp ? 'Sign in' : 'Sign up'}
+          </Link>
         </div>
       </motion.div>
     </div>

@@ -8,25 +8,25 @@ import useIsMobile from '../../hooks/useIsMobile';
 
 const navLinkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
-const NavItems = ({ onClose, onTeammatesClick }) => (
+const NavItems = ({ onClose, onTeammatesClick, isMobile = false }) => (
   <>
-    <NavLink to="/" onClick={onClose} className={navLinkClass}>
+    <NavLink to="/" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
       <Compass size={18} />
       Discover
     </NavLink>
     <SignedIn>
-      <button type="button" onClick={onTeammatesClick} className="nav-link">
+      <button type="button" onClick={onTeammatesClick} className={isMobile ? 'nav-link nav-link--mobile' : 'nav-link'}>
         <Users size={18} />
         Teammates
       </button>
     </SignedIn>
     <SignedOut>
-      <NavLink to="/auth" onClick={onClose} className={navLinkClass}>
+      <NavLink to="/auth" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <Users size={18} />
         Teammates
       </NavLink>
     </SignedOut>
-    <NavLink to="/ready" onClick={onClose} className={navLinkClass}>
+    <NavLink to="/ready" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
       <Radar size={18} />
       Match
     </NavLink>
@@ -67,11 +67,13 @@ const Navbar = ({ onTeamCreated }) => {
             </div>
 
             <SignedIn>
-              <UserButton afterSignOutUrl="/">
-                <UserButton.MenuItems>
-                  <UserButton.Action label="signOut" />
-                </UserButton.MenuItems>
-              </UserButton>
+              <div className="nav-avatar-shell">
+                <UserButton afterSignOutUrl="/">
+                  <UserButton.MenuItems>
+                    <UserButton.Action label="signOut" />
+                  </UserButton.MenuItems>
+                </UserButton>
+              </div>
             </SignedIn>
 
             <SignedOut>
@@ -100,7 +102,9 @@ const Navbar = ({ onTeamCreated }) => {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: isMobile ? 0.16 : 0.25 }}
             >
-              <NavItems onClose={() => setMobileOpen(false)} onTeammatesClick={openTeammatesModal} />
+              <div className="top-nav__mobile-links">
+                <NavItems isMobile onClose={() => setMobileOpen(false)} onTeammatesClick={openTeammatesModal} />
+              </div>
 
               <div className="top-nav__mobile-header">
                 <div className="nav-city-pill">
@@ -115,11 +119,13 @@ const Navbar = ({ onTeamCreated }) => {
                 </SignedOut>
 
                 <SignedIn>
-                  <UserButton afterSignOutUrl="/">
-                    <UserButton.MenuItems>
-                      <UserButton.Action label="signOut" />
-                    </UserButton.MenuItems>
-                  </UserButton>
+                  <div className="nav-avatar-shell">
+                    <UserButton afterSignOutUrl="/">
+                      <UserButton.MenuItems>
+                        <UserButton.Action label="signOut" />
+                      </UserButton.MenuItems>
+                    </UserButton>
+                  </div>
                 </SignedIn>
               </div>
             </motion.div>

@@ -245,6 +245,15 @@ img {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
+.nav-link--mobile {
+  width: 100%;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(167, 139, 250, 0.08);
+}
+
 .top-nav__actions {
   gap: 12px;
   flex-shrink: 0;
@@ -252,6 +261,14 @@ img {
 
 .top-nav__actions > * {
   flex-shrink: 0;
+}
+
+.nav-avatar-shell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 42px;
 }
 
 .nav-city-pill {
@@ -1040,14 +1057,24 @@ img {
   .top-nav__mobile-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(76, 47, 138, 0.08);
+    padding-top: 16px;
+    border-top: 1px solid rgba(167, 139, 250, 0.12);
   }
 
   .top-nav__mobile-header {
     justify-content: space-between;
+    gap: 12px;
+  }
+
+  .top-nav__mobile-links {
+    display: grid;
+    gap: 10px;
+  }
+
+  .top-nav__mobile-header .btn-primary {
+    min-height: 44px;
   }
 }
 
@@ -1058,21 +1085,70 @@ img {
   }
 
   .top-nav {
-    padding: 12px 14px;
+    padding: 12px;
+    border-radius: 24px;
     backdrop-filter: blur(10px);
   }
 
   .top-nav__row {
-    gap: 10px;
+    gap: 12px;
   }
 
   .top-nav__brand {
     min-width: 0;
     flex: 1 1 auto;
+    padding: 4px 0;
   }
 
   .top-nav__actions {
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .brand-title {
+    font-size: 1.4rem;
+    letter-spacing: -0.07em;
+  }
+
+  .top-nav__brand::after {
+    right: 18px;
+    opacity: 0.55;
+  }
+
+  .nav-avatar-shell {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .top-nav__mobile-toggle {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    flex-basis: 42px;
+    border-radius: 14px;
+  }
+
+  .top-nav__mobile-panel {
+    margin-top: 12px;
+    padding-top: 14px;
+  }
+
+  .top-nav__mobile-header {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .top-nav__mobile-header .nav-city-pill {
+    order: 2;
+    width: 100%;
+    justify-content: center;
+    padding: 11px 14px;
+  }
+
+  .top-nav__mobile-header .btn-primary {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
   }
 
   .section-shell,

@@ -29,6 +29,12 @@ const AppContent = () => {
   const { isSignedIn, getToken } = useAuth();
   const { isOpen, closeChat, activeSessionId, partner, openChat } = useChat();
 
+  // Use refs for variables inside listeners to avoid re-initializing socket on every state change
+  const chatStateRef = useRef({ isOpen, activeSessionId });
+  useEffect(() => {
+    chatStateRef.current = { isOpen, activeSessionId };
+  }, [isOpen, activeSessionId]);
+
   useEffect(() => {
     if (!isSignedIn) return undefined;
 
@@ -53,8 +59,9 @@ const AppContent = () => {
       });
 
       socketInstance.on('notification:message', (data) => {
+        const { isOpen: currentIsOpen, activeSessionId: currentActiveId } = chatStateRef.current;
         // Only show toast if chat is closed or referring to a different session
-        if (!isOpen || activeSessionId !== data.sessionId) {
+        if (!currentIsOpen || currentActiveId !== data.sessionId) {
           toast(
             (t) => (
               <div onClick={() => { toast.dismiss(t.id); openChat(data.sessionId); }} style={{ cursor: 'pointer' }}>
@@ -75,7 +82,7 @@ const AppContent = () => {
     return () => {
       socketInstance?.disconnect();
     };
-  }, [isSignedIn, getToken, openChat, isOpen, activeSessionId]);
+  }, [isSignedIn, getToken, openChat]);
 
   return (
     <div className="app-shell">

@@ -865,6 +865,7 @@ img {
   display: grid;
   place-items: center;
   padding: 24px;
+  overscroll-behavior: contain;
 }
 
 .modal-card {
@@ -876,6 +877,15 @@ img {
   background:
     radial-gradient(circle at top right, rgba(56, 189, 248, 0.06), transparent 20%),
     linear-gradient(180deg, rgba(25, 17, 43, 0.98), rgba(15, 10, 27, 0.98));
+}
+
+.modal-shell {
+  width: min(100%, 520px);
+  margin: 0 auto;
+}
+
+.modal-shell--wide {
+  width: min(100%, 720px);
 }
 
 .modal-head {
@@ -902,6 +912,25 @@ img {
 .modal-copy {
   color: var(--text-secondary);
   margin-bottom: 20px;
+}
+
+.modal-status {
+  padding: 12px 14px;
+  border-radius: 18px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.modal-status--success {
+  color: #d8fff1;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+}
+
+.modal-status--error {
+  color: #ffe2e7;
+  background: rgba(244, 63, 94, 0.16);
+  border: 1px solid rgba(244, 63, 94, 0.24);
 }
 
 .form-stack {

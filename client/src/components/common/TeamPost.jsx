@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
 import { CheckCircle, Users, X } from 'lucide-react';
@@ -10,33 +10,57 @@ const TeamPost = ({ team }) => {
   const [pitch, setPitch] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const { isSignedIn, getToken } = useAuth();
   const isMobile = useIsMobile();
 
+  useEffect(() => {
+    if (!showModal) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showModal]);
+
   const handlePitch = async (event) => {
     event.preventDefault();
-    if (!pitch.trim() || pitch.length < 10) return;
+    const nextPitch = pitch.trim();
+    if (nextPitch.length < 10) {
+      setFeedback({ tone: 'error', message: 'Write a short intro with at least 10 characters.' });
+      return;
+    }
 
     setSubmitting(true);
+    setFeedback(null);
 
     try {
       const token = await getToken();
       await axios.post(
         `/teams/${team.id}/requests`,
-        { pitch },
+        { pitch: nextPitch },
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
 
       setSent(true);
+      setFeedback({ tone: 'success', message: 'Pitch sent. The team owner can review it from Manage posts.' });
       setTimeout(() => {
         setShowModal(false);
         setSent(false);
         setPitch('');
+        setFeedback(null);
       }, 1500);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to send pitch.');
+      setFeedback({
+        tone: 'error',
+        message: error.response?.data?.message || 'Failed to send pitch.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -76,6 +100,9 @@ const TeamPost = ({ team }) => {
               }
 
               setShowModal(true);
+              setFeedback(null);
+              setPitch('');
+              setSent(false);
             }}
           >
             Join
@@ -96,11 +123,12 @@ const TeamPost = ({ team }) => {
 
             <div className="modal-wrap">
               <motion.div
-                className="modal-card"
+                className="modal-card modal-shell"
                 initial={isMobile ? false : { opacity: 0, y: 18, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
                 transition={{ duration: isMobile ? 0.18 : 0.26, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(event) => event.stopPropagation()}
               >
                 <div className="modal-head">
                   <div>
@@ -135,6 +163,12 @@ const TeamPost = ({ team }) => {
                           style={{ resize: 'vertical' }}
                         />
                       </div>
+
+                      {feedback && (
+                        <div className={`modal-status modal-status--${feedback.tone}`}>
+                          {feedback.message}
+                        </div>
+                      )}
 
                       <button type="submit" className="btn-primary" disabled={submitting || pitch.length < 10}>
                         {submitting ? 'Sending...' : 'Send Pitch'}

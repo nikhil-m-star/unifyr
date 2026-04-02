@@ -89,12 +89,26 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   const [myTeams, setMyTeams] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [status, setStatus] = useState(null);
   const { getToken } = useAuth();
   const isMobile = useIsMobile();
 
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value });
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
 
   const loadMyTeams = async () => {
     setLoadingTeams(true);
@@ -105,7 +119,10 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
       });
       setMyTeams(response.data);
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to load your teammate posts.');
+      setStatus({
+        tone: 'error',
+        message: error.response?.data?.message || 'Failed to load your teammate posts.',
+      });
     } finally {
       setLoadingTeams(false);
     }
@@ -117,9 +134,17 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
     }
   }, [activeTab, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setStatus(null);
+      setActiveTab('create');
+    }
+  }, [isOpen]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
+    setStatus(null);
 
     try {
       const token = await getToken();
@@ -137,11 +162,15 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
       );
 
       setForm({ eventName: '', teamName: '', description: '', lookingFor: '' });
-      onCreated?.();
       setActiveTab('manage');
-      loadMyTeams();
+      setStatus({ tone: 'success', message: 'Teammate post is live. You can manage pitches below.' });
+      await loadMyTeams();
+      onCreated?.();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create teammate post.');
+      setStatus({
+        tone: 'error',
+        message: error.response?.data?.message || 'Failed to create teammate post.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -150,6 +179,7 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   const handleManageAction = async (type, id, payload = {}) => {
     const key = `${type}-${id}`;
     setBusyId(key);
+    setStatus(null);
     try {
       const token = await getToken();
       if (type === 'request') {
@@ -162,9 +192,16 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
         await axios.delete(`/teams/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       }
       await loadMyTeams();
+      setStatus({
+        tone: 'success',
+        message: type === 'request' ? 'Pitch updated.' : type === 'delete' ? 'Teammate post deleted.' : 'Teammate post updated.',
+      });
       onCreated?.();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update teammate post.');
+      setStatus({
+        tone: 'error',
+        message: error.response?.data?.message || 'Failed to update teammate post.',
+      });
     } finally {
       setBusyId(null);
     }
@@ -178,12 +215,12 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
 
           <div className="modal-wrap">
             <motion.div
-              className="modal-card"
+              className="modal-card modal-shell modal-shell--wide"
               initial={isMobile ? false : { opacity: 0, y: 18, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.96 }}
               transition={{ duration: isMobile ? 0.18 : 0.26, ease: [0.16, 1, 0.3, 1] }}
-              style={{ width: 'min(100%, 720px)' }}
+              onClick={(event) => event.stopPropagation()}
             >
               <div className="modal-head">
                 <div>
@@ -203,6 +240,12 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
                   <Users size={16} /> Manage posts
                 </button>
               </div>
+
+              {status && (
+                <div className={`modal-status modal-status--${status.tone}`} style={{ marginBottom: '1rem' }}>
+                  {status.message}
+                </div>
+              )}
 
               {activeTab === 'create' ? (
                 <form onSubmit={handleSubmit} className="form-stack">

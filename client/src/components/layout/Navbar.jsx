@@ -137,7 +137,6 @@ const Navbar = ({ onTeamCreated }) => {
         isOpen={isCreateTeamOpen}
         onClose={() => setIsCreateTeamOpen(false)}
         onCreated={() => {
-          setIsCreateTeamOpen(false);
           onTeamCreated?.();
         }}
       />

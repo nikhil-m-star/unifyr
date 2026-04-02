@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!api/|socket.io/|health$).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

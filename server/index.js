@@ -11,10 +11,32 @@ const { Server } = require('socket.io');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : null;
+
+const isOriginAllowed = (origin) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (!allowedOrigins || allowedOrigins.length === 0) {
+    return true;
+  }
+
+  return allowedOrigins.includes(origin);
+};
+
 // Security Middlewares
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -38,7 +60,13 @@ const teamRoutes = require('./routes/teamRoutes');
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   }

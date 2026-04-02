@@ -4,6 +4,7 @@ const { protect, requireAuthentication, syncUser } = require('../middlewares/aut
 
 const router = express.Router();
 
+router.get('/', protect, requireAuthentication, syncUser, getUserSessions);
 router.get('/:sessionId/messages', protect, requireAuthentication, syncUser, getSessionMessages);
 
 module.exports = router;

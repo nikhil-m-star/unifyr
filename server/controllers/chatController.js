@@ -21,6 +21,17 @@ const getSessionMessages = async (req, res) => {
   }
 };
 
+const getUserSessions = async (req, res) => {
+  try {
+    const sessions = await chatModel.getUserChatSessions(req.dbUser.id);
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Failed to fetch user sessions:', error);
+    res.status(500).json({ message: 'Failed to fetch conversations' });
+  }
+};
+
 module.exports = {
   getSessionMessages,
+  getUserSessions,
 };

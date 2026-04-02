@@ -10,6 +10,7 @@ import RadarView from './views/RadarView';
 import TeammatesView from './views/TeammatesView';
 import ManageView from './views/ManageView';
 import JoinTeamView from './views/JoinTeamView';
+import MessagesView from './views/MessagesView';
 import { ChatProvider, useChat } from './context/ChatContext';
 import ChatDrawer from './components/common/ChatDrawer';
 
@@ -105,6 +106,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <JoinTeamView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesView />
               </ProtectedRoute>
             }
           />

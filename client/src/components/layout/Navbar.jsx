@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Compass, Edit, MapPin, Menu, Radar, Users, X } from 'lucide-react';
+import { Compass, Edit, MapPin, Menu, Radar, Users, X, MessageSquare } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -19,6 +19,10 @@ const NavItems = ({ onClose, onTeammatesClick, isMobile = false }) => (
       Teammates
     </NavLink>
     <SignedIn>
+      <NavLink to="/messages" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
+        <MessageSquare size={18} />
+        Messages
+      </NavLink>
       <NavLink to="/manage" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <Edit size={18} />
         Manage

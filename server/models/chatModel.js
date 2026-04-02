@@ -49,9 +49,51 @@ const createMessage = async (sessionId, senderId, content) => {
   return rows[0];
 };
 
+const getUserChatSessions = async (userId) => {
+  const query = `
+    SELECT
+      cs.id,
+      cs.topic,
+      cs.created_at,
+      CASE
+        WHEN cs.user_1_id = $1 THEN u2.id
+        ELSE u1.id
+      END AS partner_id,
+      CASE
+        WHEN cs.user_1_id = $1 THEN u2.name
+        ELSE u1.name
+      END AS partner_name,
+      CASE
+        WHEN cs.user_1_id = $1 THEN u2.profile_pic
+        ELSE u1.profile_pic
+      END AS partner_profile_pic,
+      CASE
+        WHEN cs.user_1_id = $1 THEN u2.role
+        ELSE u1.role
+      END AS partner_role,
+      last_msg.content AS last_message_content,
+      last_msg.created_at AS last_message_at
+    FROM chat_sessions cs
+    JOIN users u1 ON u1.id = cs.user_1_id
+    JOIN users u2 ON u2.id = cs.user_2_id
+    LEFT JOIN LATERAL (
+      SELECT content, created_at
+      FROM messages
+      WHERE session_id = cs.id
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) last_msg ON TRUE
+    WHERE cs.user_1_id = $1 OR cs.user_2_id = $1
+    ORDER BY COALESCE(last_msg.created_at, cs.created_at) DESC
+  `;
+  const { rows } = await pool.query(query, [userId]);
+  return rows;
+};
+
 module.exports = {
   createChatSession,
   getChatSessionById,
   getChatSessionMessages,
   createMessage,
+  getUserChatSessions,
 };

@@ -7,6 +7,7 @@ import AuthView from './views/AuthView';
 import RadarView from './views/RadarView';
 import TeammatesView from './views/TeammatesView';
 import ManageView from './views/ManageView';
+import JoinTeamView from './views/JoinTeamView';
 
 const ProtectedRoute = ({ children }) => (
   <>
@@ -40,6 +41,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <ManageView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/teammates/:teamId/join"
+              element={
+                <ProtectedRoute>
+                  <JoinTeamView />
                 </ProtectedRoute>
               }
             />

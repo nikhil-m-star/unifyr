@@ -1,187 +1,83 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { CheckCircle, Users, X } from 'lucide-react';
-import axios from '../../api/axios';
+import { Users, ExternalLink } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const TeamPost = ({ team }) => {
-  const [showModal, setShowModal] = useState(false);
-  const [pitch, setPitch] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-  const { isSignedIn, getToken } = useAuth();
+  const navigate = useNavigate();
+  const { isSignedIn } = useAuth();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    if (!showModal) {
-      return undefined;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [showModal]);
-
-  const handlePitch = async (event) => {
-    event.preventDefault();
-    const nextPitch = pitch.trim();
-    if (nextPitch.length < 10) {
-      setFeedback({ tone: 'error', message: 'Write a short intro with at least 10 characters.' });
-      return;
-    }
-
-    setSubmitting(true);
-    setFeedback(null);
-
-    try {
-      const token = await getToken();
-      await axios.post(
-        `/teams/${team.id}/requests`,
-        { pitch: nextPitch },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      setSent(true);
-      setFeedback({ tone: 'success', message: 'Pitch sent. The team owner can review it from Manage posts.' });
-      setTimeout(() => {
-        setShowModal(false);
-        setSent(false);
-        setPitch('');
-        setFeedback(null);
-      }, 1500);
-    } catch (error) {
-      setFeedback({
-        tone: 'error',
-        message: error.response?.data?.message || 'Failed to send pitch.',
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
-    <>
-      <motion.article className="team-card" whileHover={isMobile ? undefined : { y: -4 }} transition={{ duration: isMobile ? 0.16 : 0.25 }}>
-        <div className="team-card__top">
-          <div>
-            <div className="team-card__title">{team.team_name || team.teamName}</div>
-            {(team.event_name || team.eventName) && (
-              <div className="team-card__event">{team.event_name || team.eventName}</div>
-            )}
-            <div className="team-card__need">
-              Looking for <strong>{team.looking_for || team.lookingFor || 'builders'}</strong>
-            </div>
+    <motion.article 
+      className="team-card" 
+      whileHover={isMobile ? undefined : { y: -4, scale: 1.01 }} 
+      transition={{ duration: 0.2 }}
+      style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+    >
+      <div className="team-card__top" style={{ marginBottom: '1.25rem' }}>
+        <div style={{ flex: 1 }}>
+          <div className="team-card__title" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            {team.team_name || team.teamName}
           </div>
-
-          <span className="card-pill card-pill--warm">
-            <Users size={12} />
-            Open
-          </span>
-        </div>
-
-        <p className="team-card__body">{team.description}</p>
-
-        <div className="team-card__footer">
-          <span className="text-badge">Open now</span>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => {
-              if (!isSignedIn) {
-                alert('Please sign in first.');
-                return;
-              }
-
-              setShowModal(true);
-              setFeedback(null);
-              setPitch('');
-              setSent(false);
-            }}
-          >
-            Join
-          </button>
-        </div>
-      </motion.article>
-
-      <AnimatePresence>
-        {showModal && (
-          <>
-            <motion.div
-              className="modal-backdrop"
-              initial={isMobile ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowModal(false)}
-            />
-
-            <div className="modal-wrap">
-              <motion.div
-                className="modal-card modal-shell"
-                initial={isMobile ? false : { opacity: 0, y: 18, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 18, scale: 0.96 }}
-                transition={{ duration: isMobile ? 0.18 : 0.26, ease: [0.16, 1, 0.3, 1] }}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="modal-head">
-                  <div>
-                    <div className="section-kicker">Join request</div>
-                    <h3 className="modal-title">{team.team_name || team.teamName}</h3>
-                  </div>
-
-                  <button type="button" className="modal-close" onClick={() => setShowModal(false)}>
-                    <X size={18} />
-                  </button>
-                </div>
-
-                {sent ? (
-                  <div style={{ padding: '28px 0', textAlign: 'center' }}>
-                    <CheckCircle size={48} style={{ color: 'var(--accent-green)', margin: '0 auto 14px' }} />
-                    <h3 style={{ marginBottom: '8px' }}>Pitch sent</h3>
-                  </div>
-                ) : (
-                  <>
-                    <form onSubmit={handlePitch} className="form-stack">
-                      <div className="field">
-                        <label htmlFor={`pitch-${team.id}`}>Your pitch</label>
-                        <textarea
-                          id={`pitch-${team.id}`}
-                          className="app-input"
-                          rows={5}
-                          required
-                          minLength={10}
-                          value={pitch}
-                          onChange={(event) => setPitch(event.target.value)}
-                          placeholder="Tell them why you're a fit"
-                          style={{ resize: 'vertical' }}
-                        />
-                      </div>
-
-                      {feedback && (
-                        <div className={`modal-status modal-status--${feedback.tone}`}>
-                          {feedback.message}
-                        </div>
-                      )}
-
-                      <button type="submit" className="btn-primary" disabled={submitting || pitch.length < 10}>
-                        {submitting ? 'Sending...' : 'Send Pitch'}
-                      </button>
-                    </form>
-                  </>
-                )}
-              </motion.div>
+          {(team.event_name || team.eventName) && (
+            <div className="team-card__event" style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ExternalLink size={12} />
+              {team.event_name || team.eventName}
             </div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+          )}
+        </div>
+
+        <span className="chip" style={{ 
+          background: 'rgba(0,229,255,0.06)', 
+          color: 'var(--accent-cyan)',
+          padding: '4px 10px',
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          border: '1px solid rgba(0,229,255,0.15)'
+        }}>
+          Recruiting
+        </span>
+      </div>
+
+      <p className="team-card__body" style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {team.description}
+      </p>
+
+      <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', marginBottom: '1.5rem', border: '1px solid var(--glass-border)' }}>
+        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.05em' }}>
+          Seeking
+        </div>
+        <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+          {team.looking_for || team.lookingFor || 'Teammates'}
+        </div>
+      </div>
+
+      <div className="team-card__footer" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem', marginTop: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+          <Users size={14} />
+          <span>Active now</span>
+        </div>
+        <button
+          type="button"
+          className="btn-primary"
+          style={{ padding: '8px 20px', borderRadius: '12px' }}
+          onClick={() => {
+            if (!isSignedIn) {
+              navigate('/auth');
+              return;
+            }
+            navigate(`/teammates/${team.id}/join`);
+          }}
+        >
+          Join Project
+        </button>
+      </div>
+    </motion.article>
   );
 };
 

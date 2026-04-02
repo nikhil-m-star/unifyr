@@ -1,5 +1,5 @@
 const { verifyToken } = require('@clerk/express');
-const { enqueueUser, dequeueUser, findMatch } = require('../services/matchmakingService');
+const { enqueueUser, dequeueUser, findMatch, normalizeTopic } = require('../services/matchmakingService');
 const { pool } = require('../config/db');
 const userModel = require('../models/userModel');
 const { syncUserFromClerk } = require('../services/userSyncService');
@@ -49,23 +49,36 @@ module.exports = (io) => {
     }
 
     socket.on('join_queue', async ({ topicKeywords }) => {
-      if (!dbUser) return;
+      if (!dbUser) {
+        socket.emit('queue_error', { message: 'Could not sync your account for matchmaking yet.' });
+        return;
+      }
+
       const userId = dbUser.id;
+      const normalizedTopic = normalizeTopic(topicKeywords);
+
+      if (!normalizedTopic) {
+        socket.emit('queue_error', { message: 'Please enter a topic before joining the queue.' });
+        return;
+      }
       
-      await enqueueUser(userId, socket.id, topicKeywords);
-      console.log(`User ${userId} joined queue for topic: ${topicKeywords}`);
+      await enqueueUser(userId, socket.id, normalizedTopic);
+      console.log(`User ${userId} joined queue for topic: ${normalizedTopic}`);
       
       socket.emit('queue_joined', { status: 'waiting' });
 
-      // Poll for matches every 3 seconds
-      const interval = setInterval(async () => {
-        const match = await findMatch(userId, topicKeywords);
-        
+      const attemptMatch = async () => {
+        const match = await findMatch(userId, normalizedTopic);
+
         if (match) {
           await dequeueUser(userId);
           await dequeueUser(match.userId);
 
-          clearInterval(interval);
+          if (matchCheckerIntervals.has(userId)) {
+            clearInterval(matchCheckerIntervals.get(userId));
+            matchCheckerIntervals.delete(userId);
+          }
+
           if (matchCheckerIntervals.has(match.userId)) {
             clearInterval(matchCheckerIntervals.get(match.userId));
             matchCheckerIntervals.delete(match.userId);
@@ -73,7 +86,7 @@ module.exports = (io) => {
 
           // Create a chat session in Postgres
           const query = 'INSERT INTO chat_sessions (user_1_id, user_2_id, topic) VALUES ($1, $2, $3) RETURNING id';
-          const { rows } = await pool.query(query, [userId, match.userId, topicKeywords]);
+          const { rows } = await pool.query(query, [userId, match.userId, normalizedTopic]);
           const sessionId = rows[0].id;
 
           // Fetch full profiles
@@ -85,7 +98,12 @@ module.exports = (io) => {
           
           console.log(`Matched ${userId} and ${match.userId}`);
         }
-      }, 3000);
+      };
+
+      // Try immediately, then poll every 3 seconds.
+      await attemptMatch();
+
+      const interval = setInterval(attemptMatch, 3000);
 
       matchCheckerIntervals.set(userId, interval);
     });

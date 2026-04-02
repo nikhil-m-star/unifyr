@@ -14,6 +14,7 @@ const RadarView = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const socketRef = useRef(null);
   const { getToken } = useAuth();
+  const normalizedTopic = topic.trim().replace(/\s+/g, ' ').toLowerCase();
 
   useEffect(() => {
     if (status !== 'waiting') {
@@ -39,7 +40,7 @@ const RadarView = () => {
 
         newSocket.on('connect', () => {
           console.log('Connected to matchmaking server');
-          newSocket.emit('join_queue', { topicKeywords: topic.trim() });
+          newSocket.emit('join_queue', { topicKeywords: normalizedTopic });
         });
 
         newSocket.on('queue_joined', () => {
@@ -51,10 +52,17 @@ const RadarView = () => {
           setStatus('matched');
         });
 
+        newSocket.on('queue_error', ({ message }) => {
+          console.error('Matchmaking queue error:', message);
+          setStatus('idle');
+          alert(message || 'Unable to join the matchmaking queue right now.');
+        });
+
         newSocket.on('connect_error', (error) => {
           console.error('Failed to connect to matchmaking server:', error);
           setStatus('idle');
           socketRef.current = null;
+          alert(error?.message || 'Unable to connect to the matchmaking server.');
         });
       } catch (error) {
         console.error('Failed to start matchmaking:', error);
@@ -72,11 +80,11 @@ const RadarView = () => {
         socketRef.current = null;
       }
     };
-  }, [getToken, status, topic]);
+  }, [getToken, normalizedTopic, status]);
 
   const handleJoinQueue = (e) => {
     e.preventDefault();
-    if (!topic.trim()) return;
+    if (!normalizedTopic) return;
     setStatus('waiting');
   };
 

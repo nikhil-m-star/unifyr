@@ -1,11 +1,15 @@
 // In-memory matchmaking queue (no Redis required)
 const matchmakingQueue = new Map();
 
+const normalizeTopic = (topicKeywords = '') => topicKeywords.trim().replace(/\s+/g, ' ').toLowerCase();
+
 const enqueueUser = async (userId, socketId, topicKeywords) => {
+  const normalizedTopic = normalizeTopic(topicKeywords);
+
   matchmakingQueue.set(userId.toString(), {
     userId,
     socketId,
-    topicKeywords,
+    topicKeywords: normalizedTopic,
     timestamp: Date.now()
   });
 };
@@ -15,6 +19,7 @@ const dequeueUser = async (userId) => {
 };
 
 const findMatch = async (userId, topicKeywords, fallbackTimeout = 20000) => {
+  const normalizedTopic = normalizeTopic(topicKeywords);
   const now = Date.now();
   let fallbackMatch = null;
 
@@ -22,7 +27,7 @@ const findMatch = async (userId, topicKeywords, fallbackTimeout = 20000) => {
     if (otherUserId === userId.toString()) continue;
 
     // 1. Exact Topic Match
-    if (userEntry.topicKeywords === topicKeywords) {
+    if (userEntry.topicKeywords === normalizedTopic) {
       return userEntry;
     }
 
@@ -49,5 +54,6 @@ const findMatch = async (userId, topicKeywords, fallbackTimeout = 20000) => {
 module.exports = {
   enqueueUser,
   dequeueUser,
-  findMatch
+  findMatch,
+  normalizeTopic
 };

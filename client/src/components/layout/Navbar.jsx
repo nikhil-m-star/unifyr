@@ -14,15 +14,15 @@ const NavItems = ({ onClose, onTeammatesClick, isMobile = false }) => (
       <Compass size={18} />
       Discover
     </NavLink>
+    <NavLink to="/teammates" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
+      <Users size={18} />
+      Teammates
+    </NavLink>
     <SignedIn>
-      <button type="button" onClick={() => onTeammatesClick('create')} className={isMobile ? 'nav-link nav-link--mobile' : 'nav-link'}>
-        <Users size={18} />
-        Teammates
-      </button>
-      <button type="button" onClick={() => onTeammatesClick('manage')} className={isMobile ? 'nav-link nav-link--mobile' : 'nav-link'}>
+      <NavLink to="/manage" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <Edit size={18} />
         Manage
-      </button>
+      </NavLink>
     </SignedIn>
     <SignedOut>
       <NavLink to="/auth" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>

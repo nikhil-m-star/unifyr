@@ -5,6 +5,8 @@ import Navbar from './components/layout/Navbar';
 import HomeView from './views/HomeView';
 import AuthView from './views/AuthView';
 import RadarView from './views/RadarView';
+import TeammatesView from './views/TeammatesView';
+import ManageView from './views/ManageView';
 
 const ProtectedRoute = ({ children }) => (
   <>
@@ -29,6 +31,15 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <RadarView />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/teammates" element={<TeammatesView />} />
+            <Route
+              path="/manage"
+              element={
+                <ProtectedRoute>
+                  <ManageView />
                 </ProtectedRoute>
               }
             />

@@ -1,8 +1,9 @@
 const { verifyToken } = require('@clerk/express');
 const { enqueueUser, dequeueUser, findMatch, normalizeTopic } = require('../services/matchmakingService');
-const { pool } = require('../config/db');
 const userModel = require('../models/userModel');
 const { syncUserFromClerk } = require('../services/userSyncService');
+const chatModel = require('../models/chatModel');
+const { upsertConnectedUser, removeConnectedUserSocket } = require('../services/presenceService');
 
 const getTokenVerificationOptions = () => {
   if (process.env.CLERK_JWT_KEY) {
@@ -44,6 +45,10 @@ module.exports = (io) => {
 
     try {
       dbUser = await syncUserFromClerk(socket.clerkUserId, socket.clerkClaims);
+      if (dbUser) {
+        socket.join(`user:${dbUser.id}`);
+        upsertConnectedUser({ ...dbUser, socketId: socket.id });
+      }
     } catch (error) {
       console.error('Socket user sync error:', error.message);
     }
@@ -84,14 +89,18 @@ module.exports = (io) => {
             matchCheckerIntervals.delete(match.userId);
           }
 
-          // Create a chat session in Postgres
-          const query = 'INSERT INTO chat_sessions (user_1_id, user_2_id, topic) VALUES ($1, $2, $3) RETURNING id';
-          const { rows } = await pool.query(query, [userId, match.userId, normalizedTopic]);
-          const sessionId = rows[0].id;
+          const session = await chatModel.createChatSession(userId, match.userId, normalizedTopic);
+          const sessionId = session.id;
+          const roomName = `chat:${sessionId}`;
 
-          // Fetch full profiles
           const currentUserProfile = await userModel.getUserById(userId);
           const matchedUserProfile = await userModel.getUserById(match.userId);
+          const matchedSocket = io.sockets.sockets.get(match.socketId);
+
+          socket.join(roomName);
+          if (matchedSocket) {
+            matchedSocket.join(roomName);
+          }
 
           socket.emit('match_success', { sessionId, partner: matchedUserProfile });
           io.to(match.socketId).emit('match_success', { sessionId, partner: currentUserProfile });
@@ -106,6 +115,35 @@ module.exports = (io) => {
       const interval = setInterval(attemptMatch, 3000);
 
       matchCheckerIntervals.set(userId, interval);
+    });
+
+    socket.on('chat:join', async ({ sessionId }) => {
+      if (!dbUser || !sessionId) return;
+
+      const session = await chatModel.getChatSessionById(Number(sessionId));
+      if (!session) return;
+      if (![session.user_1_id, session.user_2_id].includes(dbUser.id)) return;
+
+      socket.join(`chat:${session.id}`);
+    });
+
+    socket.on('chat:send', async ({ sessionId, content }) => {
+      if (!dbUser || !sessionId || typeof content !== 'string') return;
+
+      const trimmedContent = content.trim();
+      if (!trimmedContent) return;
+
+      const session = await chatModel.getChatSessionById(Number(sessionId));
+      if (!session) return;
+      if (![session.user_1_id, session.user_2_id].includes(dbUser.id)) return;
+
+      const message = await chatModel.createMessage(session.id, dbUser.id, trimmedContent);
+
+      io.to(`chat:${session.id}`).emit('chat:message', {
+        ...message,
+        sender_name: dbUser.name,
+        sender_profile_pic: dbUser.profile_pic,
+      });
     });
 
     socket.on('leave_queue', async () => {
@@ -123,6 +161,7 @@ module.exports = (io) => {
       if (dbUser) {
         const userId = dbUser.id;
         await dequeueUser(userId);
+        removeConnectedUserSocket(userId, socket.id);
         if (matchCheckerIntervals.has(userId)) {
           clearInterval(matchCheckerIntervals.get(userId));
           matchCheckerIntervals.delete(userId);

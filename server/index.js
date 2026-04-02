@@ -56,6 +56,8 @@ app.use(limiter);
 // Routes Import
 const eventRoutes = require('./routes/eventRoutes');
 const teamRoutes = require('./routes/teamRoutes');
+const userRoutes = require('./routes/userRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -83,6 +85,8 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/events', eventRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/chat', chatRoutes);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

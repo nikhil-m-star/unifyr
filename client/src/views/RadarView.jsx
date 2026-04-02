@@ -261,7 +261,7 @@ const RadarView = () => {
                       fontSize: '0.92rem',
                     }}
                   >
-                    No other active users yet. Open Match in another signed-in browser to test this.
+                    No one is active right now. Stay here for a moment and new people will appear as they come online.
                   </div>
                 )}
               </div>

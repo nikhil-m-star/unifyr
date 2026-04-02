@@ -61,19 +61,14 @@ module.exports = (io) => {
 
       const userId = dbUser.id;
       const normalizedTopic = normalizeTopic(topicKeywords);
-
-      if (!normalizedTopic) {
-        socket.emit('queue_error', { message: 'Please enter a topic before joining the queue.' });
-        return;
-      }
       
       await enqueueUser(userId, socket.id, normalizedTopic);
-      console.log(`User ${userId} joined queue for topic: ${normalizedTopic}`);
+      console.log(`User ${userId} joined random queue`);
       
       socket.emit('queue_joined', { status: 'waiting' });
 
       const attemptMatch = async () => {
-        const match = await findMatch(userId, normalizedTopic);
+        const match = await findMatch(userId);
 
         if (match) {
           await dequeueUser(userId);

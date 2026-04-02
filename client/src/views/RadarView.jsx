@@ -8,7 +8,6 @@ import { Search, X, CheckCircle, MessageSquare } from 'lucide-react';
 import axios, { API_ORIGIN } from '../api/axios';
 
 const RadarView = () => {
-  const [topic, setTopic] = useState('');
   const [status, setStatus] = useState('idle');
   const [partner, setPartner] = useState(null);
   const [sessionId, setSessionId] = useState(null);
@@ -16,7 +15,7 @@ const RadarView = () => {
   const [activeUsers, setActiveUsers] = useState([]);
   const socketRef = useRef(null);
   const { getToken, isSignedIn } = useAuth();
-  const normalizedTopic = topic.trim().replace(/\s+/g, ' ').toLowerCase();
+  const normalizedTopic = 'random';
 
   useEffect(() => {
     if (!isSignedIn || socketRef.current) {
@@ -42,6 +41,7 @@ const RadarView = () => {
         newSocket.on('match_success', ({ sessionId: matchedSessionId, partner: matchedPartner }) => {
           setPartner(matchedPartner);
           setSessionId(matchedSessionId);
+          newSocket.emit('chat:join', { sessionId: matchedSessionId });
           setStatus('matched');
         });
 
@@ -126,7 +126,6 @@ const RadarView = () => {
 
   const handleJoinQueue = (event) => {
     event.preventDefault();
-    if (!normalizedTopic) return;
     setStatus('waiting');
   };
 
@@ -182,24 +181,15 @@ const RadarView = () => {
               </div>
 
               <h2 style={{ fontSize: '1.8rem', marginBottom: '0.75rem', fontFamily: 'var(--font-display)' }}>
-                Find a <span className="gradient-text">Connection</span>
+                Find a <span className="gradient-text">Random Connection</span>
               </h2>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                Type a topic to find someone to chat with right now.
+                Jump into radar and get matched with any active person online right now.
               </p>
 
               <form onSubmit={handleJoinQueue} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: '460px', margin: '0 auto' }}>
-                <input
-                  type="text"
-                  placeholder="e.g. Hackathons, Gaming, Philosophy..."
-                  className="glass-input"
-                  value={topic}
-                  onChange={(event) => setTopic(event.target.value)}
-                  style={{ textAlign: 'center', fontSize: '1rem' }}
-                  required
-                />
                 <button type="submit" className="btn-primary" style={{ width: '100%', padding: '14px' }}>
-                  Start Radar
+                  Match Me Randomly
                 </button>
               </form>
 
@@ -317,7 +307,7 @@ const RadarView = () => {
             </div>
 
             <h3 style={{ fontSize: '1.6rem', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>Scanning Network...</h3>
-            <p style={{ color: 'var(--accent-cyan)', fontWeight: 600, marginTop: '0.5rem', fontSize: '1rem' }}>Topic: {topic}</p>
+            <p style={{ color: 'var(--accent-cyan)', fontWeight: 600, marginTop: '0.5rem', fontSize: '1rem' }}>Looking for any active person</p>
 
             <button className="btn-ghost" onClick={handleLeaveQueue} style={{ marginTop: '2.5rem' }}>
               <X size={16} /> Cancel Search
@@ -339,7 +329,7 @@ const RadarView = () => {
 
               <h2 style={{ fontSize: '2.2rem', marginBottom: '0.25rem', fontFamily: 'var(--font-display)' }}>Matched!</h2>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                You found a connection for "{topic}"
+                You found someone active right now
               </p>
 
               <div

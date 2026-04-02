@@ -27,7 +27,12 @@ const getRequestsByTeam = async (teamId) => {
   return rows;
 };
 
-const updateRequestStatus = async (id, status) => {
+const updateRequestStatus = async (id, status, chatSessionId = null) => {
+  if (chatSessionId) {
+    const query = 'UPDATE join_requests SET status = $1, chat_session_id = $2 WHERE id = $3 RETURNING *';
+    const { rows } = await pool.query(query, [status, chatSessionId, id]);
+    return rows[0];
+  }
   const query = 'UPDATE join_requests SET status = $1 WHERE id = $2 RETURNING *';
   const { rows } = await pool.query(query, [status, id]);
   return rows[0];

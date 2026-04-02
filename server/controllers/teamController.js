@@ -1,5 +1,7 @@
 const teamModel = require('../models/teamModel');
 const joinRequestModel = require('../models/joinRequestModel');
+const chatModel = require('../models/chatModel');
+const notificationService = require('../services/notificationService');
 
 const createTeam = async (req, res) => {
   try {
@@ -97,6 +99,30 @@ const processJoinRequest = async (req, res) => {
     const team = await teamModel.getTeamById(request.team_id);
     if (!team || team.creator_id !== userId) {
       return res.status(403).json({ message: 'Only team creator can process requests' });
+    }
+
+    // Create Chat Session if accepted
+    if (status === 'accepted') {
+      try {
+        const chatSession = await chatModel.createChatSession(
+          team.creator_id,
+          request.sender_id,
+          `Team: ${team.team_name || team.teamName}`
+        );
+        
+        // Save the chat_session_id to the request
+        const updatedRequest = await joinRequestModel.updateRequestStatus(requestId, status, chatSession.id);
+        
+        // Notify the applicant
+        notificationService.notifyRequestAccepted(request.sender_id, team.team_name || team.teamName);
+        
+        return res.status(200).json({ 
+          message: 'Request accepted and chat room created', 
+          request: { ...updatedRequest, chatSessionId: chatSession.id } 
+        });
+      } catch (chatError) {
+        console.error('Failed to create chat session:', chatError);
+      }
     }
 
     const updatedRequest = await joinRequestModel.updateRequestStatus(requestId, status);

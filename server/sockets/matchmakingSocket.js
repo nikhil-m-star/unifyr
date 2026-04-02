@@ -3,6 +3,7 @@ const { enqueueUser, dequeueUser, findMatch, normalizeTopic } = require('../serv
 const userModel = require('../models/userModel');
 const { syncUserFromClerk } = require('../services/userSyncService');
 const chatModel = require('../models/chatModel');
+const notificationService = require('../services/notificationService');
 const { upsertConnectedUser, removeConnectedUserSocket } = require('../services/presenceService');
 
 const getTokenVerificationOptions = () => {
@@ -139,6 +140,10 @@ module.exports = (io) => {
         sender_name: dbUser.name,
         sender_profile_pic: dbUser.profile_pic,
       });
+
+      // Notify the recipient
+      const recipientId = session.user_1_id === dbUser.id ? session.user_2_id : session.user_1_id;
+      notificationService.notifyNewMessage(recipientId, dbUser.name, trimmedContent, session.id);
     });
 
     socket.on('leave_queue', async () => {

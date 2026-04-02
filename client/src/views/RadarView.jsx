@@ -1,83 +1,49 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { io } from 'socket.io-client';
 import { useAuth } from '@clerk/clerk-react';
 import GlassCard from '../components/common/GlassCard';
-import ChatDrawer from '../components/common/ChatDrawer';
 import { Search, X, CheckCircle, MessageSquare } from 'lucide-react';
-import axios, { API_ORIGIN } from '../api/axios';
+import axios from '../api/axios';
+import { useChat } from '../context/ChatContext';
 
-const RadarView = () => {
+const RadarView = ({ globalSocket }) => {
   const [status, setStatus] = useState('idle');
   const [partner, setPartner] = useState(null);
   const [sessionId, setSessionId] = useState(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeUsers, setActiveUsers] = useState([]);
-  const socketRef = useRef(null);
   const { getToken, isSignedIn } = useAuth();
+  const { openChat } = useChat();
   const normalizedTopic = 'random';
 
   useEffect(() => {
-    if (!isSignedIn || socketRef.current) {
-      return undefined;
-    }
+    if (!isSignedIn || !globalSocket) return undefined;
 
-    let isMounted = true;
-
-    const connectPresenceSocket = async () => {
-      try {
-        const token = await getToken();
-
-        if (!isMounted || !token || socketRef.current) {
-          return;
-        }
-
-        const newSocket = io(API_ORIGIN, {
-          auth: { token },
-        });
-
-        socketRef.current = newSocket;
-
-        newSocket.on('match_success', ({ sessionId: matchedSessionId, partner: matchedPartner }) => {
-          setPartner(matchedPartner);
-          setSessionId(matchedSessionId);
-          newSocket.emit('chat:join', { sessionId: matchedSessionId });
-          setStatus('matched');
-        });
-
-        newSocket.on('queue_error', ({ message }) => {
-          console.error('Matchmaking queue error:', message);
-          setStatus('idle');
-          alert(message || 'Unable to join the matchmaking queue right now.');
-        });
-
-        newSocket.on('connect_error', (error) => {
-          console.error('Presence socket connection error:', error);
-        });
-      } catch (error) {
-        console.error('Failed to connect presence socket:', error);
-      }
+    const handleMatchSuccess = ({ sessionId: matchedSessionId, partner: matchedPartner }) => {
+      setPartner(matchedPartner);
+      setSessionId(matchedSessionId);
+      setStatus('matched');
+      // We don't auto-open chat here to let the user see the match card first
     };
 
-    connectPresenceSocket();
+    const handleQueueError = ({ message }) => {
+      console.error('Matchmaking queue error:', message);
+      setStatus('idle');
+      alert(message || 'Unable to join the matchmaking queue right now.');
+    };
+
+    globalSocket.on('match_success', handleMatchSuccess);
+    globalSocket.on('queue_error', handleQueueError);
 
     return () => {
-      isMounted = false;
-
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      globalSocket.off('match_success', handleMatchSuccess);
+      globalSocket.off('queue_error', handleQueueError);
     };
-  }, [getToken, isSignedIn]);
+  }, [isSignedIn, globalSocket]);
 
   useEffect(() => {
-    if (!isSignedIn) {
-      return undefined;
-    }
+    if (!isSignedIn) return undefined;
 
     let isMounted = true;
-
     const fetchActiveUsers = async () => {
       try {
         const token = await getToken();
@@ -103,26 +69,14 @@ const RadarView = () => {
   }, [getToken, isSignedIn]);
 
   useEffect(() => {
-    if (status !== 'waiting') {
-      return undefined;
-    }
+    if (status !== 'waiting' || !globalSocket) return undefined;
 
-    if (!socketRef.current) {
-      return undefined;
-    }
-
-    const activeSocket = socketRef.current;
-    const handleQueueJoined = () => {
-      setStatus('waiting');
-    };
-
-    activeSocket.on('queue_joined', handleQueueJoined);
-    activeSocket.emit('join_queue', { topicKeywords: normalizedTopic });
-
+    globalSocket.emit('join_queue', { topicKeywords: normalizedTopic });
+    
     return () => {
-      activeSocket.off('queue_joined', handleQueueJoined);
+      // Logic for leaving queue is handled in handleLeaveQueue or disconnect
     };
-  }, [normalizedTopic, status]);
+  }, [normalizedTopic, status, globalSocket]);
 
   const handleJoinQueue = (event) => {
     event.preventDefault();
@@ -130,14 +84,18 @@ const RadarView = () => {
   };
 
   const handleLeaveQueue = () => {
-    if (socketRef.current) {
-      socketRef.current.emit('leave_queue');
+    if (globalSocket) {
+      globalSocket.emit('leave_queue');
     }
-
-    setIsChatOpen(false);
     setStatus('idle');
     setPartner(null);
     setSessionId(null);
+  };
+
+  const handleOpenChat = () => {
+    if (sessionId && partner) {
+      openChat(sessionId, partner);
+    }
   };
 
   return (
@@ -330,22 +288,13 @@ const RadarView = () => {
                 )}
               </div>
 
-              <button className="btn-primary" onClick={() => setIsChatOpen(true)} style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>
+              <button className="btn-primary" onClick={handleOpenChat} style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>
                 <MessageSquare size={18} /> Open Chat
               </button>
             </GlassCard>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <ChatDrawer
-        key={sessionId || partner?.id || 'no-partner'}
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        partner={partner}
-        sessionId={sessionId}
-        socket={socketRef.current}
-      />
     </div>
   );
 };

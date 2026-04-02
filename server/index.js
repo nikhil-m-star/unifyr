@@ -58,6 +58,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const notificationService = require('./services/notificationService');
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -76,6 +77,9 @@ const io = new Server(server, {
 
 // Initialize Matchmaking WebSockets
 require('./sockets/matchmakingSocket')(io);
+
+// Initialize Global Notification Service
+notificationService.init(io);
 
 // Health Check
 app.get('/health', (req, res) => {

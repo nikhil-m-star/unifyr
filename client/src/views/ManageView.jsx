@@ -1,10 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Trash2, Edit, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Trash2, Edit, AlertCircle, Loader2, MessageSquare } from 'lucide-react';
 import axios from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
+import { useChat } from '../context/ChatContext';
 import useIsMobile from '../hooks/useIsMobile';
+
+const ChatButton = ({ sessionId, partner }) => {
+  const { openChat } = useChat();
+  return (
+    <button
+      type="button"
+      className="btn-primary"
+      style={{ padding: '8px 16px', fontSize: '0.85rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+      onClick={() => openChat(sessionId, partner)}
+    >
+      <MessageSquare size={14} /> Message Teammate
+    </button>
+  );
+};
 
 const ManageTeamCard = ({ team, onAction, busyId }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -202,6 +217,14 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
                         >
                           Reject
                         </button>
+                      </div>
+                    )}
+                    {request.status === 'accepted' && request.chat_session_id && (
+                      <div style={{ marginTop: '1rem' }}>
+                        <ChatButton 
+                          sessionId={request.chat_session_id} 
+                          partner={{ id: request.sender_id, name: request.sender_name, profile_pic: request.sender_profile_pic }} 
+                        />
                       </div>
                     )}
                   </div>

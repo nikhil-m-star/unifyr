@@ -199,71 +199,20 @@ const RadarView = () => {
                   <span className="text-badge">{activeUsers.length} online</span>
                 </div>
 
-                {activeUsers.length > 0 ? (
-                  <div style={{ display: 'grid', gap: '0.75rem' }}>
-                    {activeUsers.slice(0, 5).map((activeUser) => (
-                      <div
-                        key={activeUser.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '1rem',
-                          padding: '0.9rem 1rem',
-                          borderRadius: '18px',
-                          border: '1px solid var(--glass-border)',
-                          background: 'rgba(255,255,255,0.03)',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-                          <div
-                            style={{
-                              width: '42px',
-                              height: '42px',
-                              borderRadius: '50%',
-                              overflow: 'hidden',
-                              display: 'grid',
-                              placeItems: 'center',
-                              background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
-                              color: '#fff',
-                              fontWeight: 700,
-                            }}
-                          >
-                            {activeUser.profile_pic ? (
-                              <img src={activeUser.profile_pic} alt={activeUser.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                              activeUser.name?.charAt(0)?.toUpperCase()
-                            )}
-                          </div>
-
-                          <div>
-                            <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{activeUser.name}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                              {activeUser.ready_tag || activeUser.role || 'Available to match'}
-                            </div>
-                          </div>
-                        </div>
-
-                        <span className="chip" style={{ background: 'rgba(45,212,191,0.08)', color: 'var(--accent-teal)' }}>
-                          Online
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      padding: '1rem 1.1rem',
-                      borderRadius: '18px',
-                      border: '1px solid var(--glass-border)',
-                      background: 'rgba(255,255,255,0.03)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.92rem',
-                    }}
-                  >
-                    No one is active right now. Stay here for a moment and new people will appear as they come online.
-                  </div>
-                )}
+                <div
+                  style={{
+                    padding: '1rem 1.1rem',
+                    borderRadius: '18px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'rgba(255,255,255,0.03)',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.92rem',
+                  }}
+                >
+                  {activeUsers.length > 0
+                    ? `${activeUsers.length} people are online and available to match right now.`
+                    : 'No one is active right now. Check back in a bit and new people will appear as they come online.'}
+                </div>
               </div>
             </GlassCard>
           </motion.div>

@@ -1,0 +1,12 @@
+{
+  "name": "unifyr-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm install --prefix server && npm start --prefix server",
+    "build": "npm install --prefix client && npm run build --prefix client"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

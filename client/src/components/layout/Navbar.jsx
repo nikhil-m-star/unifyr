@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Compass, MapPin, Menu, Radar, Users, X } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const navLinkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
@@ -35,6 +36,7 @@ const NavItems = ({ onClose, onTeammatesClick }) => (
 const Navbar = ({ onTeamCreated }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const openTeammatesModal = () => {
     setMobileOpen(false);
@@ -45,9 +47,9 @@ const Navbar = ({ onTeamCreated }) => {
     <>
       <motion.nav
         className="top-nav"
-        initial={{ y: -28, opacity: 0 }}
+        initial={isMobile ? false : { y: -28, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: isMobile ? 0.18 : 0.45, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="top-nav__row">
           <NavLink to="/" className="top-nav__brand" onClick={() => setMobileOpen(false)}>
@@ -96,10 +98,10 @@ const Navbar = ({ onTeamCreated }) => {
           {mobileOpen && (
             <motion.div
               className="top-nav__mobile-panel"
-              initial={{ opacity: 0, height: 0 }}
+              initial={isMobile ? false : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: isMobile ? 0.16 : 0.25 }}
             >
               <NavItems onClose={() => setMobileOpen(false)} onTeammatesClick={openTeammatesModal} />
 

@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
 import { X } from 'lucide-react';
 import axios from '../../api/axios';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   const [form, setForm] = useState({ eventName: '', teamName: '', description: '', lookingFor: '' });
   const [submitting, setSubmitting] = useState(false);
   const { getToken } = useAuth();
+  const isMobile = useIsMobile();
 
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value });
@@ -48,7 +50,7 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
         <>
           <motion.div
             className="modal-backdrop"
-            initial={{ opacity: 0 }}
+            initial={isMobile ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
@@ -57,10 +59,10 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
           <div className="modal-wrap">
             <motion.div
               className="modal-card"
-              initial={{ opacity: 0, y: 18, scale: 0.96 }}
+              initial={isMobile ? false : { opacity: 0, y: 18, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 18, scale: 0.96 }}
-              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: isMobile ? 0.18 : 0.26, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="modal-head">
                 <div>

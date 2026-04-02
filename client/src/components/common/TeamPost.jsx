@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
 import { CheckCircle, Users, X } from 'lucide-react';
 import axios from '../../api/axios';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const TeamPost = ({ team }) => {
   const [showModal, setShowModal] = useState(false);
@@ -10,6 +11,7 @@ const TeamPost = ({ team }) => {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const { isSignedIn, getToken } = useAuth();
+  const isMobile = useIsMobile();
 
   const handlePitch = async (event) => {
     event.preventDefault();
@@ -42,7 +44,7 @@ const TeamPost = ({ team }) => {
 
   return (
     <>
-      <motion.article className="team-card" whileHover={{ y: -4 }} transition={{ duration: 0.25 }}>
+      <motion.article className="team-card" whileHover={isMobile ? undefined : { y: -4 }} transition={{ duration: isMobile ? 0.16 : 0.25 }}>
         <div className="team-card__top">
           <div>
             <div className="team-card__title">{team.team_name || team.teamName}</div>
@@ -86,7 +88,7 @@ const TeamPost = ({ team }) => {
           <>
             <motion.div
               className="modal-backdrop"
-              initial={{ opacity: 0 }}
+              initial={isMobile ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowModal(false)}
@@ -95,10 +97,10 @@ const TeamPost = ({ team }) => {
             <div className="modal-wrap">
               <motion.div
                 className="modal-card"
-                initial={{ opacity: 0, y: 18, scale: 0.96 }}
+                initial={isMobile ? false : { opacity: 0, y: 18, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
-                transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: isMobile ? 0.18 : 0.26, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="modal-head">
                   <div>

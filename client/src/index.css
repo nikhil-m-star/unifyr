@@ -517,6 +517,8 @@ img {
 
 .feed-section {
   margin-top: 28px;
+  content-visibility: auto;
+  contain-intrinsic-size: 720px;
 }
 
 .top-section {
@@ -575,7 +577,6 @@ img {
   padding: 6px 2px 14px;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
 }
 
 .featured-carousel__item {
@@ -735,6 +736,8 @@ img {
   min-height: 250px;
   background: linear-gradient(180deg, rgba(13, 9, 22, 0.99), rgba(7, 5, 13, 0.99));
   border: 1px solid rgba(167, 139, 250, 0.09);
+  content-visibility: auto;
+  contain-intrinsic-size: 260px;
 }
 
 .team-card:hover {
@@ -1045,6 +1048,7 @@ img {
 
   .top-nav {
     padding: 12px 14px;
+    backdrop-filter: blur(10px);
   }
 
   .section-shell,
@@ -1059,8 +1063,20 @@ img {
     padding: 18px;
   }
 
+  .section-shell,
+  .auth-panel,
+  .surface-card,
+  .modal-card {
+    backdrop-filter: blur(10px);
+  }
+
+  .modal-backdrop {
+    backdrop-filter: blur(4px);
+  }
+
   .feed-section {
     margin-top: 24px;
+    contain-intrinsic-size: 620px;
   }
 
   .featured-carousel {
@@ -1076,6 +1092,18 @@ img {
 
   .market-card {
     min-height: 440px;
+  }
+
+  .market-card__media {
+    transition-duration: 0.25s;
+  }
+
+  .market-card:hover .market-card__media {
+    transform: none;
+  }
+
+  .team-card:hover {
+    box-shadow: var(--shadow-soft);
   }
 
   .page-title {

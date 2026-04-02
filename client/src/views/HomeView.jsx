@@ -4,12 +4,14 @@ import { ArrowLeft, ArrowRight, Users } from 'lucide-react';
 import HeroEvent from '../components/common/HeroEvent';
 import TeamPost from '../components/common/TeamPost';
 import axios from '../api/axios';
+import useIsMobile from '../hooks/useIsMobile';
 
 const HomeView = ({ refreshToken = 0 }) => {
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const carouselRef = useRef(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -68,9 +70,9 @@ const HomeView = ({ refreshToken = 0 }) => {
     <div className="market-shell">
       <motion.section
         className="feed-section top-section"
-        initial={{ opacity: 0, y: 24 }}
+        initial={isMobile ? false : { opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: isMobile ? 0.18 : 0.4 }}
       >
         <div className="section-head section-head--top">
           <span className="section-kicker">Featured events</span>
@@ -93,9 +95,9 @@ const HomeView = ({ refreshToken = 0 }) => {
               <motion.div
                 key={event.id}
                 className="featured-carousel__item"
-                initial={{ opacity: 0, x: 18 }}
+                initial={isMobile ? false : { opacity: 0, x: 18 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.04 }}
+                transition={{ duration: isMobile ? 0.16 : 0.3, delay: isMobile ? 0 : index * 0.04 }}
               >
                 <HeroEvent event={event} />
               </motion.div>
@@ -109,9 +111,9 @@ const HomeView = ({ refreshToken = 0 }) => {
       <motion.section
         className="feed-section"
         id="teams"
-        initial={{ opacity: 0, y: 20 }}
+        initial={isMobile ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.08 }}
+        transition={{ duration: isMobile ? 0.18 : 0.4, delay: isMobile ? 0 : 0.08 }}
       >
         <div className="section-head">
           <span className="section-kicker">Open teams</span>
@@ -126,9 +128,9 @@ const HomeView = ({ refreshToken = 0 }) => {
             teams.map((team, index) => (
               <motion.div
                 key={team.id}
-                initial={{ opacity: 0, y: 14 }}
+                initial={isMobile ? false : { opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.05 * index }}
+                transition={{ duration: isMobile ? 0.16 : 0.3, delay: isMobile ? 0 : 0.05 * index }}
               >
                 <TeamPost team={team} />
               </motion.div>

@@ -159,7 +159,7 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
                   }}
                 >
                   {partner?.profile_pic ? (
-                    <img src={partner.profile_pic} alt={partner.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={partner.profile_pic} alt={partner?.name || 'Partner'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <span style={{ color: 'white', fontWeight: 700 }}>{partner?.name?.charAt(0) || 'U'}</span>
                   )}

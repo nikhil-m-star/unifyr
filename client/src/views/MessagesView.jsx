@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { MessageSquare, Clock, User, ChevronRight, Loader2, Search } from 'lucide-react';
 import axios from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
@@ -185,8 +186,8 @@ const MessagesView = () => {
             Start discovering teammates or finding random matches to begin your first conversation.
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <a href="/teammates" className="btn-primary">Find Teammates</a>
-            <a href="/ready" className="btn-secondary">Random Match</a>
+            <Link to="/teammates" className="btn-primary">Find Teammates</Link>
+            <Link to="/ready" className="btn-secondary">Random Match</Link>
           </div>
         </div>
       )}

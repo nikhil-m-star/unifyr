@@ -244,6 +244,11 @@ img {
 
 .top-nav__actions {
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.top-nav__actions > * {
+  flex-shrink: 0;
 }
 
 .nav-city-pill {
@@ -1019,7 +1024,10 @@ img {
     align-items: center;
     justify-content: center;
     width: 46px;
+    min-width: 46px;
     height: 46px;
+    min-height: 46px;
+    flex: 0 0 46px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(167, 139, 250, 0.08);
@@ -1049,6 +1057,23 @@ img {
   .top-nav {
     padding: 12px 14px;
     backdrop-filter: blur(10px);
+  }
+
+  .top-nav__row {
+    gap: 10px;
+  }
+
+  .top-nav__brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .brand-copy {
+    min-width: 0;
+  }
+
+  .top-nav__actions {
+    gap: 10px;
   }
 
   .section-shell,

@@ -16,8 +16,13 @@ const processRequestSchema = z.object({
   status: z.enum(['accepted', 'rejected'])
 });
 
+const updateTeamStatusSchema = z.object({
+  status: z.enum(['open', 'closed'])
+});
+
 module.exports = {
   createTeamSchema,
   joinRequestSchema,
-  processRequestSchema
+  processRequestSchema,
+  updateTeamStatusSchema
 };

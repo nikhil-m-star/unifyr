@@ -39,6 +39,24 @@ const updateTeamStatus = async (id, status) => {
   return rows[0];
 };
 
+const deleteTeam = async (id) => {
+  const query = 'DELETE FROM teams WHERE id = $1 RETURNING *';
+  const { rows } = await pool.query(query, [id]);
+  return rows[0];
+};
+
+const getTeamsByCreator = async (creatorId) => {
+  const query = `
+    SELECT teams.*, COALESCE(teams.event_name, featured_events.title) AS event_name
+    FROM teams
+    LEFT JOIN featured_events ON featured_events.id = teams.event_id
+    WHERE teams.creator_id = $1
+    ORDER BY teams.created_at DESC
+  `;
+  const { rows } = await pool.query(query, [creatorId]);
+  return rows;
+};
+
 const getAllTeams = async () => {
   const query = `
     SELECT teams.*, COALESCE(teams.event_name, featured_events.title) AS event_name
@@ -55,5 +73,7 @@ module.exports = {
   getTeamsByEvent,
   getTeamById,
   updateTeamStatus,
+  deleteTeam,
+  getTeamsByCreator,
   getAllTeams
 };

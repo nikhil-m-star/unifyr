@@ -1,7 +1,16 @@
 const express = require('express');
-const { createTeam, getEventTeams, getAllTeams, createJoinRequest, processJoinRequest } = require('../controllers/teamController');
+const {
+  createTeam,
+  getEventTeams,
+  getAllTeams,
+  getMyTeams,
+  createJoinRequest,
+  processJoinRequest,
+  updateMyTeamStatus,
+  deleteMyTeam,
+} = require('../controllers/teamController');
 const validateRequest = require('../middlewares/validateRequest');
-const { createTeamSchema, joinRequestSchema, processRequestSchema } = require('../validators/teamValidators');
+const { createTeamSchema, joinRequestSchema, processRequestSchema, updateTeamStatusSchema } = require('../validators/teamValidators');
 const { protect, requireAuthentication, syncUser } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -10,6 +19,9 @@ const router = express.Router();
 router.post('/', protect, requireAuthentication, syncUser, validateRequest(createTeamSchema), createTeam);
 router.get('/', getAllTeams); 
 router.get('/event/:eventId', getEventTeams);
+router.get('/mine', protect, requireAuthentication, syncUser, getMyTeams);
+router.patch('/:teamId/status', protect, requireAuthentication, syncUser, validateRequest(updateTeamStatusSchema), updateMyTeamStatus);
+router.delete('/:teamId', protect, requireAuthentication, syncUser, deleteMyTeam);
 
 // Join Requests endpoints
 router.post('/:teamId/requests', protect, requireAuthentication, syncUser, validateRequest(joinRequestSchema), createJoinRequest);

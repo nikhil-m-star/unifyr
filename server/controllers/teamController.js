@@ -35,11 +35,45 @@ const getAllTeams = async (req, res) => {
   }
 };
 
+const getMyTeams = async (req, res) => {
+  try {
+    const teams = await teamModel.getTeamsByCreator(req.dbUser.id);
+    const teamsWithRequests = await Promise.all(
+      teams.map(async (team) => ({
+        ...team,
+        requests: await joinRequestModel.getRequestsByTeam(team.id),
+      })),
+    );
+    res.status(200).json(teamsWithRequests);
+  } catch (error) {
+    console.error('Get My Teams Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 const createJoinRequest = async (req, res) => {
   try {
     const { teamId } = req.params;
     const { pitch } = req.body;
     const senderId = req.dbUser.id;
+    const team = await teamModel.getTeamById(teamId);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    if (team.creator_id === senderId) {
+      return res.status(400).json({ message: 'You cannot send a pitch to your own teammate post.' });
+    }
+
+    if (team.status !== 'open') {
+      return res.status(400).json({ message: 'This teammate post is no longer accepting pitches.' });
+    }
+
+    const existingPendingRequest = await joinRequestModel.getPendingRequestByTeamAndSender(teamId, senderId);
+    if (existingPendingRequest) {
+      return res.status(400).json({ message: 'You already have a pending pitch for this teammate post.' });
+    }
 
     const request = await joinRequestModel.createJoinRequest(teamId, senderId, pitch);
     res.status(201).json({ message: 'Join request sent', request });
@@ -73,10 +107,56 @@ const processJoinRequest = async (req, res) => {
   }
 };
 
+const updateMyTeamStatus = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const { status } = req.body;
+    const team = await teamModel.getTeamById(teamId);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    if (team.creator_id !== req.dbUser.id) {
+      return res.status(403).json({ message: 'Only the creator can manage this teammate post.' });
+    }
+
+    const updatedTeam = await teamModel.updateTeamStatus(teamId, status);
+    res.status(200).json({ message: 'Teammate post updated', team: updatedTeam });
+  } catch (error) {
+    console.error('Update Team Status Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const deleteMyTeam = async (req, res) => {
+  try {
+    const { teamId } = req.params;
+    const team = await teamModel.getTeamById(teamId);
+
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
+    }
+
+    if (team.creator_id !== req.dbUser.id) {
+      return res.status(403).json({ message: 'Only the creator can delete this teammate post.' });
+    }
+
+    await teamModel.deleteTeam(teamId);
+    res.status(200).json({ message: 'Teammate post deleted' });
+  } catch (error) {
+    console.error('Delete Team Error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   createTeam,
   getEventTeams,
   getAllTeams,
+  getMyTeams,
   createJoinRequest,
-  processJoinRequest
+  processJoinRequest,
+  updateMyTeamStatus,
+  deleteMyTeam
 };

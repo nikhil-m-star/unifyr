@@ -573,11 +573,15 @@ img {
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   padding: 6px 2px 14px;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 .featured-carousel__item {
   flex: 0 0 min(372px, 84vw);
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .featured-carousel__skeleton {
@@ -633,8 +637,8 @@ img {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(30, 10, 70, 0.24) 0%, rgba(18, 7, 42, 0.62) 34%, rgba(3, 2, 8, 0.985) 100%),
-    linear-gradient(145deg, rgba(109, 40, 217, 0.34), rgba(76, 29, 149, 0.18) 42%, rgba(3, 2, 8, 0.18) 78%);
+    linear-gradient(180deg, rgba(4, 4, 8, 0.06) 0%, rgba(4, 4, 8, 0.18) 28%, rgba(3, 2, 8, 0.88) 100%),
+    linear-gradient(145deg, rgba(8, 8, 14, 0.12), rgba(8, 8, 14, 0.04) 44%, rgba(3, 2, 8, 0.08) 78%);
 }
 
 .market-card__content {
@@ -1057,6 +1061,21 @@ img {
 
   .feed-section {
     margin-top: 24px;
+  }
+
+  .featured-carousel {
+    gap: 16px;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+
+  .featured-carousel__item,
+  .featured-carousel__skeleton {
+    flex-basis: min(320px, 88vw);
+  }
+
+  .market-card {
+    min-height: 440px;
   }
 
   .page-title {

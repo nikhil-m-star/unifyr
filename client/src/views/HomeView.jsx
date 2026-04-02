@@ -33,7 +33,9 @@ const HomeView = ({ refreshToken = 0 }) => {
     const container = carouselRef.current;
     if (!container) return;
 
-    const amount = Math.max(container.clientWidth * 0.82, 320);
+    const firstCard = container.querySelector('.featured-carousel__item');
+    const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : container.clientWidth * 0.82;
+    const amount = Math.max(cardWidth + 24, 260);
     container.scrollBy({ left: direction * amount, behavior: 'smooth' });
   };
 

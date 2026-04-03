@@ -59,6 +59,7 @@ const HomeView = ({ refreshToken = 0 }) => {
   const [events, setEvents] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const carouselRef = useRef(null);
   const isMobile = useIsMobile();
 
@@ -88,7 +89,18 @@ const HomeView = ({ refreshToken = 0 }) => {
     container.scrollBy({ left: direction * amount, behavior: 'smooth' });
   };
 
-  const groupedTeams = groupTeamsByEvent(teams);
+  const filteredEvents = events.filter(e => 
+    e.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    e.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredTeams = teams.filter(t => 
+    t.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.team_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const groupedTeams = groupTeamsByEvent(filteredTeams);
 
   if (loading) {
     return (
@@ -123,10 +135,24 @@ const HomeView = ({ refreshToken = 0 }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: isMobile ? 0.18 : 0.4 }}
       >
+        <div className="teammates-filters" style={{ marginBottom: '2.5rem' }}>
+          <div className="teammates-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="teammates-search-icon" style={{ width: '16px', height: '16px' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input
+              type="text"
+              className="glass-input"
+              placeholder="Search for an event, hackathon, or team..."
+              style={{ paddingLeft: '44px', width: '100%', height: '52px', fontSize: '0.95rem' }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="section-head section-head--top">
           <span className="section-kicker">Featured events</span>
 
-          {events.length > 1 && (
+          {filteredEvents.length > 1 && (
             <div className="carousel-controls">
               <button type="button" className="carousel-button" onClick={() => scrollCarousel(-1)} aria-label="Scroll left">
                 <ArrowLeft size={18} />
@@ -138,9 +164,9 @@ const HomeView = ({ refreshToken = 0 }) => {
           )}
         </div>
 
-        {events.length > 0 ? (
+        {filteredEvents.length > 0 ? (
           <div ref={carouselRef} className="featured-carousel hide-scrollbar">
-            {events.map((event, index) => (
+            {filteredEvents.map((event, index) => (
               <motion.div
                 key={event.id}
                 className="featured-carousel__item"
@@ -153,7 +179,7 @@ const HomeView = ({ refreshToken = 0 }) => {
             ))}
           </div>
         ) : (
-          <div className="empty-state">No featured events yet.</div>
+          <div className="empty-state">No featured events match your search.</div>
         )}
       </motion.section>
 

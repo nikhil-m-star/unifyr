@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SignedIn, SignedOut } from '@clerk/clerk-react';
-import { Search, Filter, Loader2, Users } from 'lucide-react';
+import { SignedIn } from '@clerk/clerk-react';
+import { Search, Loader2, Users } from 'lucide-react';
 import axios from '../api/axios';
 import TeamPost from '../components/common/TeamPost';
 import CreateTeamModal from '../components/common/CreateTeamModal';
@@ -44,16 +44,15 @@ const TeammatesView = () => {
   return (
     <div className="market-shell">
       <motion.div
-        initial={isMobile ? false : { opacity: 0, y: 20 }}
+        initial={isMobile ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="page-header"
-        style={{ marginBottom: '3rem' }}
+        className="messages-header"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '2rem' }}>
+        <div className="teammates-header-row">
           <div>
             <span className="section-kicker">Collaboration</span>
             <h1 className="page-title">Find Your Team</h1>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '1.1rem', maxWidth: '600px' }}>
+            <p className="messages-subtitle" style={{ maxWidth: '520px' }}>
               Discover active projects and pitch your skills to hunters looking for teammates.
             </p>
           </div>
@@ -61,7 +60,7 @@ const TeammatesView = () => {
             <button 
               className="btn-primary" 
               onClick={() => setIsModalOpen(true)}
-              style={{ padding: '14px 28px', fontSize: '1rem' }}
+              style={{ padding: '12px 24px', fontSize: '0.92rem', flexShrink: 0 }}
             >
               Post Recruitment
             </button>
@@ -69,35 +68,27 @@ const TeammatesView = () => {
         </div>
       </motion.div>
 
-      <div style={{ 
-        display: 'flex', 
-        gap: '1.5rem', 
-        marginBottom: '2.5rem', 
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
-          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      <div className="teammates-filters">
+        <div className="teammates-search-wrap">
+          <Search size={16} className="teammates-search-icon" />
           <input
             type="text"
             className="glass-input"
             placeholder="Search teams, events, or tech..."
-            style={{ paddingLeft: '48px', width: '100%', height: '52px' }}
+            style={{ paddingLeft: '44px', width: '100%', height: '48px' }}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+        <div className="teammates-filter-pills">
           <button 
-            className={`btn-secondary ${filter === 'all' ? 'active' : ''}`} 
-            style={{ border: 'none', background: filter === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent', boxShadow: 'none' }}
+            className={`filter-pill ${filter === 'all' ? 'filter-pill--active' : ''}`} 
             onClick={() => setFilter('all')}
           >
             All
           </button>
           <button 
-            className={`btn-secondary ${filter === 'open' ? 'active' : ''}`} 
-            style={{ border: 'none', background: filter === 'open' ? 'rgba(255,255,255,0.1)' : 'transparent', boxShadow: 'none' }}
+            className={`filter-pill ${filter === 'open' ? 'filter-pill--active' : ''}`} 
             onClick={() => setFilter('open')}
           >
             Open Only
@@ -111,28 +102,24 @@ const TeammatesView = () => {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '40vh', gap: '1rem' }}
+            className="messages-loading"
+            style={{ height: '40vh' }}
           >
-            <Loader2 className="animate-spin" size={32} color="var(--accent-primary)" />
-            <p style={{ color: 'var(--text-secondary)' }}>Gathering active recruitment posts...</p>
+            <Loader2 className="animate-spin" size={28} color="var(--accent-primary)" />
+            <p>Gathering active recruitment posts...</p>
           </motion.div>
         ) : filteredTeams.length > 0 ? (
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             className="teammates-grid"
-            style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 380px), 1fr))', 
-              gap: '1.5rem' 
-            }}
           >
             {filteredTeams.map((team, index) => (
               <motion.div
                 key={team.id}
-                initial={isMobile ? false : { opacity: 0, y: 15 }}
+                initial={isMobile ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.04 }}
               >
                 <TeamPost team={team} />
               </motion.div>
@@ -142,26 +129,13 @@ const TeammatesView = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }}
-            style={{ textAlign: 'center', padding: '6rem 2rem' }}
+            className="messages-empty"
           >
-            <div style={{ 
-              background: 'rgba(255,255,255,0.02)', 
-              width: '80px', 
-              height: '80px', 
-              borderRadius: '24px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              margin: '0 auto 2rem',
-              color: 'var(--text-muted)',
-              border: '1px solid var(--glass-border)'
-            }}>
-              <Users size={32} />
+            <div className="messages-empty__icon">
+              <Users size={28} />
             </div>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>No Matches Found</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem' }}>
-              We couldn't find any teammate posts matching your current filters.
-            </p>
+            <h2>No Matches Found</h2>
+            <p>We couldn't find any teammate posts matching your current filters.</p>
           </motion.div>
         )}
       </AnimatePresence>

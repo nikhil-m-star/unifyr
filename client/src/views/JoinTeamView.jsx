@@ -72,112 +72,112 @@ const JoinTeamView = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem' }}>
-        <Loader2 className="animate-spin" size={32} color="var(--accent-primary)" />
-        <p style={{ color: 'var(--text-secondary)' }}>Preparing your pitch board...</p>
+      <div className="messages-loading">
+        <Loader2 className="animate-spin" size={28} color="var(--accent-primary)" />
+        <p>Preparing your pitch board...</p>
       </div>
     );
   }
 
   if (!team && status?.tone === 'error') {
     return (
-      <div className="market-shell" style={{ textAlign: 'center', padding: '6rem 2rem' }}>
-        <AlertCircle size={48} color="var(--accent-rose)" style={{ marginBottom: '1.5rem' }} />
-        <h2 style={{ fontSize: '1.8rem', marginBottom: '1rem' }}>Post Expired</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{status.message}</p>
-        <Link to="/teammates" className="btn-primary">View Other Teams</Link>
+      <div className="messages-empty" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="messages-empty__icon" style={{ background: 'rgba(244,63,94,0.06)', borderColor: 'rgba(244,63,94,0.12)' }}>
+          <AlertCircle size={28} color="var(--accent-rose)" />
+        </div>
+        <h2>Post Expired</h2>
+        <p>{status.message}</p>
+        <div className="messages-empty__actions">
+          <Link to="/teammates" className="btn-primary">View Other Teams</Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="market-shell">
-      <Link to="/teammates" className="nav-back" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', marginBottom: '2rem', textDecoration: 'none', width: 'fit-content' }}>
-        <ArrowLeft size={18} />
+      <Link to="/teammates" className="join-back-link">
+        <ArrowLeft size={16} />
         Back to listings
       </Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.2fr', gap: '3rem', alignItems: 'start' }}>
+      <div className="join-layout">
         <motion.div
-           initial={{ opacity: 0, x: -20 }}
-           animate={{ opacity: 1, x: 0 }}
+          initial={isMobile ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
         >
           <span className="section-kicker">Join Request</span>
-          <h1 className="page-title" style={{ marginBottom: '1.5rem' }}>Pitch to {team.team_name || team.teamName}</h1>
+          <h1 className="page-title" style={{ marginBottom: '1.25rem', fontSize: isMobile ? '1.5rem' : undefined }}>
+            Pitch to {team.team_name || team.teamName}
+          </h1>
           
-          <GlassCard style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-               <Calendar size={16} color="var(--accent-cyan)" />
-               <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase' }}>
-                 {team.event_name || team.eventName}
-               </span>
+          <GlassCard style={{ padding: isMobile ? '1.25rem' : '1.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
+              <Calendar size={14} color="var(--accent-secondary)" />
+              <span style={{ color: 'var(--accent-secondary)', fontWeight: 600, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {team.event_name || team.eventName}
+              </span>
             </div>
             
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
               {team.description}
             </p>
 
-            <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '18px', border: '1px solid var(--glass-border)' }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                 <Users size={16} color="var(--accent-blue)" />
-                 <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Currently Looking For</span>
-               </div>
-               <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)' }}>{team.looking_for || 'Passionate builders'}</p>
+            <div style={{ padding: '1rem', background: 'rgba(139,92,246,0.03)', borderRadius: '14px', border: '1px solid rgba(139,92,246,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <Users size={14} color="var(--accent-primary)" />
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>Currently Looking For</span>
+              </div>
+              <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{team.looking_for || 'Passionate builders'}</p>
             </div>
           </GlassCard>
         </motion.div>
 
         <motion.div
-           initial={{ opacity: 0, x: 20 }}
-           animate={{ opacity: 1, x: 0 }}
-           transition={{ delay: 0.1 }}
+          initial={isMobile ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
         >
           <AnimatePresence mode="wait">
             {sent ? (
               <motion.div 
                 key="success"
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scale: 1 }}
-                style={{ 
-                  textAlign: 'center', 
-                  padding: '4rem 2rem', 
-                  background: 'rgba(16, 185, 129, 0.05)', 
-                  borderRadius: '32px', 
-                  border: '1px solid rgba(16, 185, 129, 0.2)' 
-                }}
+                className="join-success"
               >
-                <CheckCircle size={64} color="var(--accent-green)" style={{ marginBottom: '1.5rem' }} />
-                <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Pitch Delivered!</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-                  The team owner has been notified. Redirecting you back...
+                <CheckCircle size={56} color="var(--accent-green)" style={{ marginBottom: '1.25rem' }} />
+                <h2 style={{ fontSize: '1.6rem', marginBottom: '0.75rem' }}>Pitch Delivered!</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                  The team owner has been notified. Redirecting...
                 </p>
               </motion.div>
             ) : (
               <form key="form" onSubmit={handleSubmit} className="form-stack">
-                <GlassCard style={{ padding: '2.5rem' }}>
+                <GlassCard style={{ padding: isMobile ? '1.5rem' : '2rem' }}>
                   <div className="field">
-                    <label htmlFor="pitch-input" style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', display: 'block' }}>
+                    <label htmlFor="pitch-input" style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>
                       Why are you a good fit?
                     </label>
                     <textarea
                       id="pitch-input"
                       className="glass-input"
-                      style={{ minHeight: '240px', padding: '1.5rem', lineHeight: '1.6', fontSize: '1rem' }}
+                      style={{ minHeight: isMobile ? '180px' : '220px', padding: '1.25rem', lineHeight: '1.6', fontSize: '0.92rem', resize: 'vertical' }}
                       value={pitch}
                       onChange={(e) => setPitch(e.target.value)}
                       placeholder="Start with your skills, your interest in the project, and what you're excited to contribute..."
                       required
                       minLength={10}
                     />
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                       <span style={{ fontSize: '0.75rem', color: pitch.length < 10 ? 'var(--accent-rose)' : 'var(--text-muted)' }}>
-                         {pitch.length} / 1000 characters
-                       </span>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: pitch.length < 10 ? 'var(--accent-rose)' : 'var(--text-muted)' }}>
+                        {pitch.length} / 1000
+                      </span>
                     </div>
                   </div>
 
                   {status && (
-                    <div className={`modal-status modal-status--${status.tone}`} style={{ marginBottom: '1.5rem' }}>
+                    <div className={`modal-status modal-status--${status.tone}`} style={{ marginBottom: '1rem' }}>
                       {status.message}
                     </div>
                   )}
@@ -191,7 +191,7 @@ const JoinTeamView = () => {
                       type="submit" 
                       className="btn-primary" 
                       disabled={submitting || pitch.length < 10}
-                      style={{ height: '56px', fontSize: '1.1rem', width: '100%' }}
+                      style={{ height: '50px', fontSize: '0.95rem', width: '100%' }}
                     >
                       {submitting ? 'Sending Request...' : 'Send My Pitch'}
                     </button>

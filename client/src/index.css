@@ -1539,3 +1539,278 @@ img {
   font-size: 0.88rem;
   margin: 0;
 }
+
+/* ─── Teammates View ─── */
+
+.teammates-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.teammates-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.teammates-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.teammates-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.teammates-filter-pills {
+  display: flex;
+  gap: 4px;
+  background: rgba(139, 92, 246, 0.03);
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(139, 92, 246, 0.06);
+  flex-shrink: 0;
+}
+
+.filter-pill {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: var(--font-sans);
+}
+
+.filter-pill:hover {
+  color: var(--text-secondary);
+}
+
+.filter-pill--active {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.teammates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 1.25rem;
+}
+
+/* ─── Join Team View ─── */
+
+.join-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  transition: color var(--transition-base);
+}
+
+.join-back-link:hover {
+  color: var(--text-primary);
+}
+
+.join-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.join-success {
+  text-align: center;
+  padding: 3.5rem 2rem;
+  background: rgba(52, 211, 153, 0.04);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(52, 211, 153, 0.12);
+}
+
+/* ─── Mobile Responsive Fixes ─── */
+
+@media (max-width: 900px) {
+  .join-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .teammates-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .teammates-header-row .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .teammates-filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .teammates-search-wrap {
+    width: 100%;
+  }
+
+  .teammates-filter-pills {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .teammates-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .messages-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .messages-subtitle {
+    font-size: 0.88rem;
+  }
+
+  .messages-list {
+    gap: 8px;
+  }
+
+  .messages-empty {
+    padding: 3.5rem 1.5rem;
+  }
+
+  .manage-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .manage-card {
+    padding: 1.25rem !important;
+  }
+
+  .manage-card__controls {
+    gap: 0.5rem;
+  }
+
+  .manage-card__controls .btn-secondary,
+  .manage-card__controls .btn-ghost {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .join-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .join-back-link {
+    margin-bottom: 1rem;
+  }
+
+  .join-success {
+    padding: 2.5rem 1.5rem;
+  }
+
+  /* --- General Mobile Polish --- */
+
+  .section-kicker {
+    font-size: 0.7rem;
+  }
+
+  .section-kicker::before {
+    width: 6px;
+    height: 6px;
+  }
+
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .auth-simple__title {
+    font-size: 2rem;
+  }
+
+  .auth-panel {
+    padding: 18px;
+    min-height: 0;
+    border-radius: 22px;
+  }
+
+  .modal-card {
+    padding: 20px;
+    max-height: 92vh;
+  }
+
+  .modal-title {
+    font-size: 1.3rem;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  .app-container,
+  .top-nav {
+    width: calc(100% - 12px);
+  }
+
+  .top-nav {
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .brand-title {
+    font-size: 1.15rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .btn-primary {
+    padding: 10px 16px;
+    font-size: 0.84rem;
+  }
+
+  .market-card {
+    min-height: 340px;
+    border-radius: 18px;
+  }
+
+  .market-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .team-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .surface-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+}

@@ -22,12 +22,6 @@ const TeamPost = ({ team }) => {
           <div className="team-card__title" style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             {team.team_name || team.teamName}
           </div>
-          {(team.event_name || team.eventName) && (
-            <div className="team-card__event" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ExternalLink size={11} />
-              {team.event_name || team.eventName}
-            </div>
-          )}
         </div>
 
         <span className="chip" style={{ 

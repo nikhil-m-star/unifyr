@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /auth
 
-Sitemap: https://unifyr.up.railway.app/sitemap.xml
+Sitemap: https://unifyr-production.up.railway.app/sitemap.xml

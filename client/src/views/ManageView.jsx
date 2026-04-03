@@ -12,8 +12,7 @@ const ChatButton = ({ sessionId, partner }) => {
   return (
     <button
       type="button"
-      className="btn-primary"
-      style={{ padding: '8px 16px', fontSize: '0.85rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+      className="btn-primary manage-chat-btn"
       onClick={() => openChat(sessionId, partner)}
     >
       <MessageSquare size={14} /> Message Teammate
@@ -40,199 +39,113 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
   };
 
   return (
-    <GlassCard className="manage-card" style={{ padding: '1.5rem', height: 'auto' }}>
+    <GlassCard className="manage-card">
       {isEditing ? (
         <form onSubmit={handleUpdate} className="form-stack">
-          <div className="section-kicker" style={{ marginBottom: '1rem' }}>Edit teammate post</div>
+          <div className="section-kicker" style={{ marginBottom: '0.5rem' }}>Edit teammate post</div>
           <div className="field">
             <label htmlFor={`edit-teamName-${team.id}`}>Team Name</label>
-            <input
-              id={`edit-teamName-${team.id}`}
-              name="teamName"
-              className="glass-input"
-              value={editForm.teamName}
-              onChange={handleEditChange}
-              required
-            />
+            <input id={`edit-teamName-${team.id}`} name="teamName" className="glass-input" value={editForm.teamName} onChange={handleEditChange} required />
           </div>
           <div className="field">
             <label htmlFor={`edit-lookingFor-${team.id}`}>Looking for</label>
-            <input
-              id={`edit-lookingFor-${team.id}`}
-              name="lookingFor"
-              className="glass-input"
-              value={editForm.lookingFor}
-              onChange={handleEditChange}
-            />
+            <input id={`edit-lookingFor-${team.id}`} name="lookingFor" className="glass-input" value={editForm.lookingFor} onChange={handleEditChange} />
           </div>
           <div className="field">
             <label htmlFor={`edit-description-${team.id}`}>Description</label>
-            <textarea
-              id={`edit-description-${team.id}`}
-              name="description"
-              className="glass-input"
-              rows={3}
-              value={editForm.description}
-              onChange={handleEditChange}
-            />
+            <textarea id={`edit-description-${team.id}`} name="description" className="glass-input" rows={3} value={editForm.description} onChange={handleEditChange} />
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="manage-card__actions">
             <button type="submit" className="btn-primary" disabled={busyId?.includes(team.id)}>
               {busyId?.includes(team.id) ? 'Saving...' : 'Save Changes'}
             </button>
-            <button type="button" className="btn-ghost" onClick={() => setIsEditing(false)}>
-              Cancel
-            </button>
+            <button type="button" className="btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
           </div>
         </form>
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+          <div className="manage-card__header">
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, fontFamily: 'var(--font-display)' }}>
-                {team.team_name || team.teamName}
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-                Event: {team.event_name || team.eventName}
-              </p>
+              <h3 className="manage-card__title">{team.team_name || team.teamName}</h3>
+              <p className="manage-card__event">Event: {team.event_name || team.eventName}</p>
             </div>
             <span className="chip" style={{ 
-              background: team.status === 'closed' ? 'rgba(244,114,182,0.1)' : 'rgba(0,229,255,0.08)', 
-              color: team.status === 'closed' ? 'var(--accent-rose)' : 'var(--accent-cyan)',
-              border: `1px solid ${team.status === 'closed' ? 'rgba(244,114,182,0.2)' : 'rgba(0,229,255,0.2)'}`
+              background: team.status === 'closed' ? 'rgba(236,72,153,0.08)' : 'rgba(139,92,246,0.08)', 
+              color: team.status === 'closed' ? 'var(--accent-rose)' : 'var(--accent-secondary)',
+              border: `1px solid ${team.status === 'closed' ? 'rgba(236,72,153,0.15)' : 'rgba(139,92,246,0.15)'}`
             }}>
               {team.status || 'open'}
             </span>
           </div>
 
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            {team.description || 'No description provided.'}
-          </p>
+          <p className="manage-card__desc">{team.description || 'No description provided.'}</p>
 
           {team.looking_for && (
-             <div style={{ marginBottom: '1.5rem' }}>
-               <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
-                 Looking for
-               </span>
-               <span className="chip" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                 {team.looking_for}
-               </span>
-             </div>
+            <div className="manage-card__seeking">
+              <span className="manage-card__seeking-label">Looking for</span>
+              <span className="chip" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.1)' }}>
+                {team.looking_for}
+              </span>
+            </div>
           )}
 
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', paddingBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', marginBottom: '1.5rem' }}>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => onAction('status', team.id, { status: team.status === 'open' ? 'closed' : 'open' })}
-              disabled={busyId === `status-${team.id}`}
-            >
-              {team.status === 'open' ? 'Close Recruitment' : 'Reopen Recruitment'}
+          <div className="manage-card__controls">
+            <button type="button" className="btn-secondary" onClick={() => onAction('status', team.id, { status: team.status === 'open' ? 'closed' : 'open' })} disabled={busyId === `status-${team.id}`}>
+              {team.status === 'open' ? 'Close' : 'Reopen'}
             </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setIsEditing(true)}
-              disabled={busyId?.includes(team.id)}
-            >
-              <Edit size={16} /> Edit Details
+            <button type="button" className="btn-secondary" onClick={() => setIsEditing(true)} disabled={busyId?.includes(team.id)}>
+              <Edit size={14} /> Edit
             </button>
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => onAction('delete', team.id)}
-              disabled={busyId === `delete-${team.id}`}
-              style={{ color: 'var(--accent-rose)', marginLeft: 'auto' }}
-            >
-              <Trash2 size={18} />
+            <button type="button" className="btn-ghost" onClick={() => onAction('delete', team.id)} disabled={busyId === `delete-${team.id}`} style={{ color: 'var(--accent-rose)', marginLeft: 'auto' }}>
+              <Trash2 size={16} />
             </button>
           </div>
 
-          <div className="pitches-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Incoming Pitches ({team.requests?.length || 0})
-              </h4>
+          <div className="manage-card__pitches">
+            <div className="manage-card__pitches-header">
+              <h4>Incoming Pitches ({team.requests?.length || 0})</h4>
             </div>
 
             {team.requests?.length ? (
-              <div style={{ display: 'grid', gap: '1rem' }}>
+              <div className="manage-card__pitches-list">
                 {team.requests.map((request) => (
-                  <div 
-                    key={request.id} 
-                    style={{ 
-                      borderRadius: '20px', 
-                      padding: '1.25rem', 
-                      background: 'rgba(255,255,255,0.03)', 
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      transition: 'transform 0.2s ease',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ 
-                          width: '36px', 
-                          height: '36px', 
-                          borderRadius: '12px', 
-                          background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          fontSize: '0.9rem', 
-                          fontWeight: 700,
-                          color: 'white',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                        }}>
+                  <div key={request.id} className="pitch-card">
+                    <div className="pitch-card__top">
+                      <div className="pitch-card__user">
+                        <div className="pitch-card__avatar">
                           {request.sender_name?.charAt(0) || 'U'}
                         </div>
                         <div>
-                          <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.92rem' }}>{request.sender_name || 'Applicant'}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{request.sender_role || 'Developer'}</div>
+                          <div className="pitch-card__name">{request.sender_name || 'Applicant'}</div>
+                          <div className="pitch-card__role">{request.sender_role || 'Developer'}</div>
                         </div>
                       </div>
-                      <span className={`chip status-${request.status}`} style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700 }}>
+                      <span className={`chip status-${request.status}`} style={{ fontSize: '0.68rem' }}>
                         {request.status}
                       </span>
                     </div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.5, background: 'rgba(0,0,0,0.1)', padding: '10px 14px', borderRadius: '12px' }}>
-                      "{request.pitch}"
-                    </p>
+                    <p className="pitch-card__text">"{request.pitch}"</p>
                     {request.status === 'pending' && (
-                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                        <button
-                          type="button"
-                          className="btn-primary"
-                          style={{ padding: '8px 16px', fontSize: '0.85rem', flex: 1 }}
-                          onClick={() => onAction('request', request.id, { status: 'accepted' })}
-                          disabled={busyId === `request-${request.id}`}
-                        >
+                      <div className="pitch-card__actions">
+                        <button type="button" className="btn-primary" onClick={() => onAction('request', request.id, { status: 'accepted' })} disabled={busyId === `request-${request.id}`}>
                           <Check size={14} /> Accept
                         </button>
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          style={{ padding: '8px 16px', fontSize: '0.85rem', flex: 1 }}
-                          onClick={() => onAction('request', request.id, { status: 'rejected' })}
-                          disabled={busyId === `request-${request.id}`}
-                        >
+                        <button type="button" className="btn-secondary" onClick={() => onAction('request', request.id, { status: 'rejected' })} disabled={busyId === `request-${request.id}`}>
                           Reject
                         </button>
                       </div>
                     )}
                     {request.status === 'accepted' && request.chat_session_id && (
-                      <div style={{ marginTop: '1rem' }}>
-                        <ChatButton 
-                          sessionId={request.chat_session_id} 
-                          partner={{ id: request.sender_id, name: request.sender_name, profile_pic: request.sender_profile_pic }} 
-                        />
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <ChatButton sessionId={request.chat_session_id} partner={{ id: request.sender_id, name: request.sender_name, profile_pic: request.sender_profile_pic }} />
                       </div>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ padding: '3rem 1rem', textAlign: 'center', background: 'rgba(255,255,255,0.015)', borderRadius: '24px', border: '1px dashed var(--glass-border)' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem' }}>No pitches yet. Sit tight, your team is out there!</p>
+              <div className="pitch-card__empty">
+                <p>No pitches yet. Sit tight, your team is out there!</p>
               </div>
             )}
           </div>
@@ -284,19 +197,11 @@ const ManageView = () => {
       } else if (type === 'delete') {
         await axios.delete(`/teams/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       }
-      
       await loadMyTeams();
-      setStatus({ 
-        tone: 'success', 
-        message: type === 'delete' ? 'Teammate post removed.' : 'Update synchronized successfully.' 
-      });
-      
+      setStatus({ tone: 'success', message: type === 'delete' ? 'Teammate post removed.' : 'Update synchronized successfully.' });
       setTimeout(() => setStatus(null), 3000);
     } catch (error) {
-      setStatus({ 
-        tone: 'error', 
-        message: error.response?.data?.message || 'Update failed. Please retry.' 
-      });
+      setStatus({ tone: 'error', message: error.response?.data?.message || 'Update failed. Please retry.' });
     } finally {
       setBusyId(null);
     }
@@ -304,9 +209,9 @@ const ManageView = () => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem' }}>
-        <Loader2 className="animate-spin" size={32} color="var(--accent-primary)" />
-        <p style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Syncing your dashboard...</p>
+      <div className="messages-loading">
+        <Loader2 className="animate-spin" size={28} color="var(--accent-primary)" />
+        <p>Syncing your dashboard...</p>
       </div>
     );
   }
@@ -314,79 +219,55 @@ const ManageView = () => {
   return (
     <div className="market-shell">
       <motion.div
-        initial={isMobile ? false : { opacity: 0, y: 20 }}
+        initial={isMobile ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="page-header"
-        style={{ marginBottom: '2.5rem' }}
+        className="messages-header"
       >
-        <div className="section-head">
-          <span className="section-kicker">Recruitment Hub</span>
-          <h1 className="page-title">Manage Your Posts</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '1rem' }}>
-            Control your teammate listings and respond to incoming pitches.
-          </p>
-        </div>
+        <span className="section-kicker">Recruitment Hub</span>
+        <h1 className="page-title">Manage Your Posts</h1>
+        <p className="messages-subtitle">
+          Control your teammate listings and respond to incoming pitches.
+        </p>
       </motion.div>
 
       <AnimatePresence>
         {status && (
           <motion.div
             initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+            animate={{ opacity: 1, height: 'auto', marginBottom: 20 }}
             exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-            style={{ 
-              padding: '12px 20px', 
-              borderRadius: '16px', 
-              background: status.tone === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-              color: status.tone === 'success' ? 'var(--accent-green)' : 'var(--accent-rose)',
-              border: `1px solid ${status.tone === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              fontSize: '0.92rem',
-              fontWeight: 600
-            }}
+            className={`modal-status modal-status--${status.tone}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
           >
-            {status.tone === 'error' ? <AlertCircle size={18} /> : <Check size={18} />}
+            {status.tone === 'error' ? <AlertCircle size={16} /> : <Check size={16} />}
             {status.message}
           </motion.div>
         )}
       </AnimatePresence>
 
       {myTeams.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 480px), 1fr))', gap: '1.5rem' }}>
+        <div className="manage-grid">
           {myTeams.map((team, index) => (
             <motion.div
               key={team.id}
-              initial={isMobile ? false : { opacity: 0, y: 15 }}
+              initial={isMobile ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.04 }}
             >
               <ManageTeamCard team={team} onAction={handleAction} busyId={busyId} />
             </motion.div>
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '6rem 2rem' }}>
-          <div style={{ 
-            background: 'rgba(255,255,255,0.02)', 
-            width: '80px', 
-            height: '80px', 
-            borderRadius: '24px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            margin: '0 auto 2rem',
-            color: 'var(--text-muted)',
-            border: '1px solid var(--glass-border)'
-          }}>
-            <Edit size={32} />
+        <div className="messages-empty">
+          <div className="messages-empty__icon">
+            <Edit size={28} />
           </div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>No Active Posts</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', maxWidth: '400px', margin: '0 auto 2.5rem' }}>
-            You haven't requested teammates for any events yet. Start by finding an event you're interested in!
-          </p>
-          <a href="/" className="btn-primary" style={{ padding: '14px 28px' }}>Explore Events</a>
+          <h2>No Active Posts</h2>
+          <p>You haven't requested teammates for any events yet. Start by finding an event you're interested in!</p>
+          <div className="messages-empty__actions">
+            <a href="/" className="btn-primary">Explore Events</a>
+          </div>
         </div>
       )}
     </div>

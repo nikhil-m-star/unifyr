@@ -18,10 +18,25 @@ const AuthView = () => {
       >
         <div className="auth-simple__intro">
           <span className="section-kicker">{isSignUp ? 'Create account' : 'Welcome back'}</span>
-          <h1 className="auth-simple__title">Unifyr</h1>
+          <h1 className="auth-simple__title">Campus Unifyr</h1>
           <p className="auth-simple__copy">
             {isSignUp ? 'Create your account to start matching with teams.' : 'Sign in to continue to events, teams, and radar.'}
           </p>
+        </div>
+
+        <div className="auth-switch" style={{ marginBottom: '0.25rem' }}>
+          <Link 
+            to="/auth" 
+            className={!isSignUp ? 'auth-tab auth-tab--active' : 'auth-tab'}
+          >
+            Sign In
+          </Link>
+          <Link 
+            to="/auth?mode=signup" 
+            className={isSignUp ? 'auth-tab auth-tab--active' : 'auth-tab'}
+          >
+            Sign Up
+          </Link>
         </div>
 
         <div className="auth-panel">
@@ -40,13 +55,6 @@ const AuthView = () => {
               fallbackRedirectUrl="/"
             />
           )}
-        </div>
-
-        <div className="auth-switch">
-          <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
-          <Link to={isSignUp ? '/auth' : '/auth?mode=signup'} className="auth-switch__link">
-            {isSignUp ? 'Sign in' : 'Sign up'}
-          </Link>
         </div>
       </motion.div>
     </div>

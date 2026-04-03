@@ -373,21 +373,35 @@ img {
 
 .auth-switch {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 0.92rem;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(139, 92, 246, 0.04);
+  border: 1px solid rgba(139, 92, 246, 0.08);
+  border-radius: var(--radius-md);
 }
 
-.auth-switch__link {
-  color: var(--accent-secondary);
+.auth-tab {
+  flex: 1;
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 0.9rem;
   font-weight: 700;
-  transition: color var(--transition-fast);
+  font-family: var(--font-sans);
+  color: var(--text-muted);
+  border-radius: 12px;
+  transition: all var(--transition-base);
+  text-decoration: none;
 }
 
-.auth-switch__link:hover {
+.auth-tab:hover {
+  color: var(--text-secondary);
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.auth-tab--active {
   color: #fff;
+  background: rgba(139, 92, 246, 0.15);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.12);
 }
 
 .auth-panel {

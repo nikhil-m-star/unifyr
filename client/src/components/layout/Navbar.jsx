@@ -51,7 +51,7 @@ const Navbar = ({ onTeamCreated }) => {
       >
         <div className="top-nav__row">
           <NavLink to="/" className="top-nav__brand" onClick={() => setMobileOpen(false)}>
-            <span className="brand-title">Unifyr</span>
+            <span className="brand-title">Campus Unifyr</span>
           </NavLink>
 
           <div className="top-nav__links">

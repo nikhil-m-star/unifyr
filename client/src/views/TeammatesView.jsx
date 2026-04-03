@@ -1,11 +1,60 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SignedIn } from '@clerk/clerk-react';
-import { Search, Loader2, Users } from 'lucide-react';
+import { Search, Loader2, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from '../api/axios';
 import TeamPost from '../components/common/TeamPost';
 import CreateTeamModal from '../components/common/CreateTeamModal';
 import useIsMobile from '../hooks/useIsMobile';
+import { groupTeamsByEvent } from '../lib/groupTeams';
+
+const EventGroup = ({ group, isMobile, defaultOpen = true }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="event-group">
+      <button
+        type="button"
+        className="event-group__header"
+        onClick={() => setIsOpen((v) => !v)}
+      >
+        <div className="event-group__info">
+          <span className="event-group__dot" />
+          <h2 className="event-group__name">{group.eventName}</h2>
+          <span className="event-group__count">{group.teams.length} {group.teams.length === 1 ? 'team' : 'teams'}</span>
+        </div>
+        <span className="event-group__toggle">
+          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="event-group__grid">
+              {group.teams.map((team, index) => (
+                <motion.div
+                  key={team.id}
+                  initial={isMobile ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                >
+                  <TeamPost team={team} />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const TeammatesView = () => {
   const [teams, setTeams] = useState([]);
@@ -41,6 +90,8 @@ const TeammatesView = () => {
     return matchesSearch;
   });
 
+  const groupedTeams = groupTeamsByEvent(filteredTeams);
+
   return (
     <div className="market-shell">
       <motion.div
@@ -53,7 +104,7 @@ const TeammatesView = () => {
             <span className="section-kicker">Collaboration</span>
             <h1 className="page-title">Find Your Team</h1>
             <p className="messages-subtitle" style={{ maxWidth: '520px' }}>
-              Discover active projects and pitch your skills to hunters looking for teammates.
+              Browse active recruitment posts grouped by event. Find your hackathon and join a team.
             </p>
           </div>
           <SignedIn>
@@ -108,21 +159,19 @@ const TeammatesView = () => {
             <Loader2 className="animate-spin" size={28} color="var(--accent-primary)" />
             <p>Gathering active recruitment posts...</p>
           </motion.div>
-        ) : filteredTeams.length > 0 ? (
+        ) : groupedTeams.length > 0 ? (
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="teammates-grid"
+            className="event-groups"
           >
-            {filteredTeams.map((team, index) => (
-              <motion.div
-                key={team.id}
-                initial={isMobile ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04 }}
-              >
-                <TeamPost team={team} />
-              </motion.div>
+            {groupedTeams.map((group, idx) => (
+              <EventGroup
+                key={group.eventName}
+                group={group}
+                isMobile={isMobile}
+                defaultOpen={idx < 3}
+              />
             ))}
           </motion.div>
         ) : (

@@ -1,10 +1,59 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import HeroEvent from '../components/common/HeroEvent';
 import TeamPost from '../components/common/TeamPost';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
+import { groupTeamsByEvent } from '../lib/groupTeams';
+
+const MiniEventGroup = ({ group, isMobile }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <div className="event-group event-group--compact">
+      <button
+        type="button"
+        className="event-group__header"
+        onClick={() => setIsOpen((v) => !v)}
+      >
+        <div className="event-group__info">
+          <span className="event-group__dot" />
+          <h3 className="event-group__name" style={{ fontSize: '1rem' }}>{group.eventName}</h3>
+          <span className="event-group__count">{group.teams.length}</span>
+        </div>
+        <span className="event-group__toggle">
+          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="event-group__grid">
+              {group.teams.map((team, index) => (
+                <motion.div
+                  key={team.id}
+                  initial={isMobile ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: isMobile ? 0.14 : 0.25, delay: isMobile ? 0 : 0.03 * index }}
+                >
+                  <TeamPost team={team} />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const HomeView = ({ refreshToken = 0 }) => {
   const [events, setEvents] = useState([]);
@@ -16,7 +65,6 @@ const HomeView = ({ refreshToken = 0 }) => {
   useEffect(() => {
     const fetchHomeData = async () => {
       setLoading(true);
-
       try {
         const [eventsRes, teamsRes] = await Promise.all([axios.get('/events'), axios.get('/teams')]);
         setEvents(eventsRes.data);
@@ -34,12 +82,13 @@ const HomeView = ({ refreshToken = 0 }) => {
   const scrollCarousel = (direction) => {
     const container = carouselRef.current;
     if (!container) return;
-
     const firstCard = container.querySelector('.featured-carousel__item');
     const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : container.clientWidth * 0.82;
     const amount = Math.max(cardWidth + 24, 260);
     container.scrollBy({ left: direction * amount, behavior: 'smooth' });
   };
+
+  const groupedTeams = groupTeamsByEvent(teams);
 
   if (loading) {
     return (
@@ -123,24 +172,17 @@ const HomeView = ({ refreshToken = 0 }) => {
           </div>
         </div>
 
-        <div className="team-grid">
-          {teams.length > 0 ? (
-            teams.map((team, index) => (
-              <motion.div
-                key={team.id}
-                initial={isMobile ? false : { opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: isMobile ? 0.16 : 0.3, delay: isMobile ? 0 : 0.05 * index }}
-              >
-                <TeamPost team={team} />
-              </motion.div>
-            ))
-          ) : (
-            <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
-              No teams are recruiting right now.
-            </div>
-          )}
-        </div>
+        {groupedTeams.length > 0 ? (
+          <div className="event-groups">
+            {groupedTeams.map((group) => (
+              <MiniEventGroup key={group.eventName} group={group} isMobile={isMobile} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
+            No teams are recruiting right now.
+          </div>
+        )}
       </motion.section>
     </div>
   );

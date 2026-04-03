@@ -1828,3 +1828,102 @@ img {
     border-radius: 18px;
   }
 }
+
+/* ─── Event Groups (Teammates/Home) ─── */
+
+.event-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.event-group {
+  background: rgba(139, 92, 246, 0.02);
+  border: 1px solid rgba(139, 92, 246, 0.08);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.event-group--compact {
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.event-group__header {
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background var(--transition-fast);
+}
+
+.event-group__header:hover {
+  background: rgba(139, 92, 246, 0.04);
+}
+
+.event-group__info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.event-group__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.event-group__name {
+  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.event-group__count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.event-group__toggle {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all var(--transition-base);
+}
+
+.event-group__header:hover .event-group__toggle {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.event-group__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 1.25rem;
+  padding: 0 1.5rem 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .event-group__header { padding: 1rem; }
+  .event-group__grid { padding: 0 1rem 1rem; grid-template-columns: 1fr; }
+  .event-group__name { font-size: 1.1rem; }
+}

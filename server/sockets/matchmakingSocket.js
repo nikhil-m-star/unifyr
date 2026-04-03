@@ -85,7 +85,10 @@ module.exports = (io) => {
             matchCheckerIntervals.delete(match.userId);
           }
 
-          const session = await chatModel.createChatSession(userId, match.userId, normalizedTopic);
+          let session = await chatModel.getChatSessionByUsers(userId, match.userId);
+          if (!session) {
+            session = await chatModel.createChatSession(userId, match.userId, normalizedTopic);
+          }
           const sessionId = session.id;
           const roomName = `chat:${sessionId}`;
 

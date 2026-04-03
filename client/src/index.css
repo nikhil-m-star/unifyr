@@ -247,7 +247,8 @@ img {
 
 .nav-link--mobile {
   width: 100%;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 16px;
   padding: 14px 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
@@ -1253,4 +1254,24 @@ img {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.manage-card {
+  transition: all var(--transition-base);
+  background: rgba(18, 12, 30, 0.9) !important;
+  border: 1px solid rgba(167, 139, 250, 0.15) !important;
+}
+
+.message-item {
+  transition: all var(--transition-base);
+  background: rgba(15, 10, 24, 0.9) !important;
+  border: 1px solid rgba(167, 139, 250, 0.15) !important;
+}
+
+.message-item:hover,
+.manage-card:hover {
+  transform: translateY(-4px);
+  background: rgba(25, 18, 42, 0.98) !important;
+  border-color: rgba(167, 139, 250, 0.4) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(167, 139, 250, 0.2) !important;
 }

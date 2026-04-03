@@ -71,9 +71,8 @@ const Navbar = ({ onTeamCreated }) => {
           </div>
 
           <div className="top-nav__actions">
-            <div className="nav-city-pill">
-              <MapPin size={16} />
-              Bengaluru
+            <div className="nav-city-pill" style={{ display: 'none' }}>
+              {/* Removed MapPin Bengaluru */}
             </div>
 
             <SignedIn>
@@ -117,9 +116,8 @@ const Navbar = ({ onTeamCreated }) => {
               </div>
 
               <div className="top-nav__mobile-header">
-                <div className="nav-city-pill">
-                  <MapPin size={16} />
-                  Bengaluru
+                <div className="nav-city-pill" style={{ display: 'none' }}>
+                  {/* Removed MapPin Bengaluru */}
                 </div>
 
                 <SignedOut>
@@ -127,16 +125,6 @@ const Navbar = ({ onTeamCreated }) => {
                     Sign In
                   </NavLink>
                 </SignedOut>
-
-                <SignedIn>
-                  <div className="nav-avatar-shell">
-                    <UserButton afterSignOutUrl="/">
-                      <UserButton.MenuItems>
-                        <UserButton.Action label="signOut" />
-                      </UserButton.MenuItems>
-                    </UserButton>
-                  </div>
-                </SignedIn>
               </div>
             </motion.div>
           )}

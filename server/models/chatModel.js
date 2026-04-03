@@ -20,6 +20,18 @@ const getChatSessionById = async (sessionId) => {
   return rows[0];
 };
 
+const getChatSessionByUsers = async (userOneId, userTwoId) => {
+  const query = `
+    SELECT id, user_1_id, user_2_id, topic, created_at
+    FROM chat_sessions
+    WHERE (user_1_id = $1 AND user_2_id = $2)
+       OR (user_1_id = $2 AND user_2_id = $1)
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(query, [userOneId, userTwoId]);
+  return rows[0];
+};
+
 const getChatSessionMessages = async (sessionId) => {
   const query = `
     SELECT
@@ -93,6 +105,7 @@ const getUserChatSessions = async (userId) => {
 module.exports = {
   createChatSession,
   getChatSessionById,
+  getChatSessionByUsers,
   getChatSessionMessages,
   createMessage,
   getUserChatSessions,

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, User } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from '../../api/axios';
+import useIsMobile from '../../hooks/useIsMobile';
 
 const mapMessage = (entry, partnerId) => ({
   id: entry.id,
@@ -20,6 +21,8 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const { getToken } = useAuth();
+
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -124,13 +127,13 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
               right: 0,
               bottom: 0,
               width: '100vw',
-              maxWidth: '480px',
+              maxWidth: isMobile ? '100%' : '480px',
               zIndex: 999,
               background: 'var(--bg-secondary)',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '-10px 0 40px rgba(0,0,0,0.6)',
-              borderLeft: '1px solid var(--glass-border)',
+              boxShadow: isMobile ? 'none' : '-10px 0 40px rgba(0,0,0,0.6)',
+              borderLeft: isMobile ? 'none' : '1px solid var(--glass-border)',
             }}
           >
             <div

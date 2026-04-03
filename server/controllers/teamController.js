@@ -104,11 +104,15 @@ const processJoinRequest = async (req, res) => {
     // Create Chat Session if accepted
     if (status === 'accepted') {
       try {
-        const chatSession = await chatModel.createChatSession(
-          team.creator_id,
-          request.sender_id,
-          `Team: ${team.team_name || team.teamName}`
-        );
+        let chatSession = await chatModel.getChatSessionByUsers(team.creator_id, request.sender_id);
+        
+        if (!chatSession) {
+          chatSession = await chatModel.createChatSession(
+            team.creator_id,
+            request.sender_id,
+            `Team: ${team.team_name || team.teamName}`
+          );
+        }
         
         // Save the chat_session_id to the request
         const updatedRequest = await joinRequestModel.updateRequestStatus(requestId, status, chatSession.id);

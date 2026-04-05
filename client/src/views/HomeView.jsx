@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import HeroEvent from '../components/common/HeroEvent';
 import TeamPost from '../components/common/TeamPost';
@@ -62,6 +62,7 @@ const HomeView = ({ refreshToken = 0 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const carouselRef = useRef(null);
   const isMobile = useIsMobile();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -154,12 +155,26 @@ const HomeView = ({ refreshToken = 0 }) => {
 
           {filteredEvents.length > 1 && (
             <div className="carousel-controls">
-              <button type="button" className="carousel-button" onClick={() => scrollCarousel(-1)} aria-label="Scroll left">
+              <motion.button
+                type="button"
+                className="carousel-button"
+                onClick={() => scrollCarousel(-1)}
+                aria-label="Scroll left"
+                whileHover={reduceMotion ? undefined : { scale: 1.08, rotate: -4 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.92 }}
+              >
                 <ArrowLeft size={18} />
-              </button>
-              <button type="button" className="carousel-button" onClick={() => scrollCarousel(1)} aria-label="Scroll right">
+              </motion.button>
+              <motion.button
+                type="button"
+                className="carousel-button"
+                onClick={() => scrollCarousel(1)}
+                aria-label="Scroll right"
+                whileHover={reduceMotion ? undefined : { scale: 1.08, rotate: 4 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.92 }}
+              >
                 <ArrowRight size={18} />
-              </button>
+              </motion.button>
             </div>
           )}
         </div>

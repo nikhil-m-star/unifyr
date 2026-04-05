@@ -99,11 +99,11 @@ const RadarView = ({ globalSocket }) => {
           >
             <GlassCard style={{ padding: '2.5rem 2rem', textAlign: 'center' }}>
               <div style={{
-                background: 'rgba(139,92,246,0.08)', width: '68px', height: '68px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.08)', width: '68px', height: '68px', borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 1.5rem', color: 'var(--accent-secondary)',
-                border: '1px solid rgba(139,92,246,0.15)',
-                boxShadow: '0 0 30px rgba(139,92,246,0.1)',
+                margin: '0 auto 1.5rem', color: 'var(--text-primary)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                boxShadow: '0 0 30px rgba(255,255,255,0.06)',
               }}>
                 <Zap size={28} />
               </div>
@@ -132,8 +132,8 @@ const RadarView = ({ globalSocket }) => {
 
                 <div style={{
                   padding: '0.9rem 1rem', borderRadius: '14px',
-                  border: '1px solid rgba(139,92,246,0.06)',
-                  background: 'rgba(139,92,246,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.04)',
                   color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5,
                 }}>
                   {activeUsers.length > 0
@@ -162,16 +162,16 @@ const RadarView = ({ globalSocket }) => {
               <motion.div
                 animate={{ scale: [1, 1.7], opacity: [0.3, 0] }}
                 transition={{ duration: 2.2, delay: 0.7, repeat: Infinity, ease: 'easeOut' }}
-                style={{ position: 'absolute', inset: 0, border: '2px solid var(--accent-purple)', borderRadius: '50%' }}
+                style={{ position: 'absolute', inset: 0, border: '2px solid rgba(255,255,255,0.35)', borderRadius: '50%' }}
               />
               <div style={{
                 position: 'absolute', inset: '28%',
-                background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+                background: 'linear-gradient(145deg, #fafafa 0%, #d4d4d4 100%)',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 10, boxShadow: '0 0 40px rgba(139,92,246,0.35)',
+                zIndex: 10, boxShadow: '0 0 40px rgba(255,255,255,0.12)',
                 border: '2px solid rgba(255,255,255,0.15)',
               }}>
-                <Search size={28} color="white" />
+                <Search size={28} color="#0a0a0a" />
               </div>
             </div>
 
@@ -186,12 +186,12 @@ const RadarView = ({ globalSocket }) => {
 
         {status === 'matched' && partner && (
           <motion.div key="matched" initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} style={{ width: '100%', maxWidth: '420px' }}>
-            <GlassCard style={{ padding: '2.5rem 2rem', textAlign: 'center', border: '1px solid rgba(139,92,246,0.2)' }}>
+            <GlassCard style={{ padding: '2.5rem 2rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.14)' }}>
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.2 }}
-                style={{ color: 'var(--accent-green)', marginBottom: '1rem' }}
+                style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}
               >
                 <CheckCircle size={52} style={{ margin: '0 auto' }} />
               </motion.div>
@@ -202,16 +202,17 @@ const RadarView = ({ globalSocket }) => {
               </p>
 
               <div style={{
-                background: 'rgba(139,92,246,0.04)', padding: '1.5rem',
+                background: 'rgba(255,255,255,0.04)', padding: '1.5rem',
                 borderRadius: 'var(--radius-xl)', marginBottom: '1.75rem',
-                border: '1px solid rgba(139,92,246,0.08)',
+                border: '1px solid rgba(255,255,255,0.08)',
               }}>
                 <div style={{
                   width: '76px', height: '76px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-purple))',
+                  background: 'linear-gradient(145deg, #fafafa 0%, #d4d4d4 100%)',
                   margin: '0 auto 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '1.8rem', fontWeight: 'bold', overflow: 'hidden',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)', border: '2px solid rgba(139,92,246,0.2)',
+                  color: '#0a0a0a',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.35)', border: '2px solid rgba(255,255,255,0.12)',
                 }}>
                   {partner.profile_pic ? (
                     <img src={partner.profile_pic} alt={partner.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -221,8 +222,8 @@ const RadarView = ({ globalSocket }) => {
                 </div>
                 <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>{partner.name}</h3>
                 <p className="chip" style={{
-                  marginTop: '0.5rem', background: 'rgba(139,92,246,0.08)',
-                  color: 'var(--accent-secondary)', border: '1px solid rgba(139,92,246,0.15)',
+                  marginTop: '0.5rem', background: 'rgba(255,255,255,0.06)',
+                  color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.12)',
                 }}>
                   {partner.role || 'Student'}
                 </p>

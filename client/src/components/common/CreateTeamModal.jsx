@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
 import { X } from 'lucide-react';
 import axios from '../../api/axios';
@@ -11,6 +11,7 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   const [status, setStatus] = useState(null);
   const { getToken } = useAuth();
   const isMobile = useIsMobile();
+  const reduceMotion = useReducedMotion();
 
   const handleChange = (event) => {
     setForm({ ...form, [event.target.name]: event.target.value });
@@ -123,9 +124,16 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
                   <textarea id="description" name="description" className="app-input" rows={4} value={form.description} onChange={handleChange} placeholder="Tell us what you're building..." style={{ resize: 'vertical' }} />
                 </div>
 
-                <button type="submit" className="btn-primary" disabled={submitting || !form.eventName.trim() || !form.teamName.trim()}>
+                <motion.button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={submitting || !form.eventName.trim() || !form.teamName.trim()}
+                  style={{ width: '100%' }}
+                  whileHover={reduceMotion ? undefined : { scale: 1.02, transition: { type: 'spring', stiffness: 480, damping: 24 } }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+                >
                   {submitting ? 'Broadcasting...' : 'Post for Teammates'}
-                </button>
+                </motion.button>
               </form>
             </motion.div>
           </div>

@@ -106,7 +106,7 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(5, 2, 9, 0.5)',
+              background: 'rgba(0, 0, 0, 0.55)',
               zIndex: 998,
               backdropFilter: 'blur(10px)',
             }}
@@ -129,17 +129,17 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
               display: 'flex',
               flexDirection: 'column',
               boxShadow: isMobile ? 'none' : '-8px 0 40px rgba(0, 0, 0, 0.5)',
-              borderLeft: isMobile ? 'none' : '1px solid rgba(139, 92, 246, 0.1)',
+              borderLeft: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
             }}
           >
             {/* Header */}
             <div style={{
               padding: '14px 16px',
-              borderBottom: '1px solid rgba(139, 92, 246, 0.08)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: 'rgba(139, 92, 246, 0.03)',
+              background: 'rgba(255, 255, 255, 0.03)',
               backdropFilter: 'blur(8px)',
               flexShrink: 0,
             }}>
@@ -151,15 +151,15 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
                 )}
                 <div style={{
                   width: '40px', height: '40px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-purple))',
+                  background: 'linear-gradient(145deg, #fafafa 0%, #d4d4d4 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)', flexShrink: 0,
+                  overflow: 'hidden', border: '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)', flexShrink: 0,
                 }}>
                   {partner?.profile_pic ? (
                     <img src={partner.profile_pic} alt={partner?.name || 'Partner'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <span style={{ color: 'white', fontWeight: 700 }}>{partner?.name?.charAt(0) || 'U'}</span>
+                    <span style={{ color: '#0a0a0a', fontWeight: 700 }}>{partner?.name?.charAt(0) || 'U'}</span>
                   )}
                 </div>
                 <div>
@@ -195,9 +195,9 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
               ) : messages.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem 1rem', marginTop: 'auto', marginBottom: 'auto' }}>
                   <div style={{
-                    background: 'rgba(139,92,246,0.06)', width: '64px', height: '64px', borderRadius: '20px',
+                    background: 'rgba(255,255,255,0.06)', width: '64px', height: '64px', borderRadius: '20px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 1.25rem', color: 'var(--text-muted)', border: '1px solid rgba(139,92,246,0.1)',
+                    margin: '0 auto 1.25rem', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)',
                   }}>
                     <Send size={28} />
                   </div>
@@ -220,13 +220,13 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
                       padding: '10px 14px',
                       borderRadius: msg.isOwn ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                       background: msg.isOwn
-                        ? 'linear-gradient(135deg, var(--accent-primary) 0%, #7c3aed 100%)'
-                        : 'rgba(139, 92, 246, 0.08)',
-                      color: msg.isOwn ? 'white' : 'var(--text-primary)',
+                        ? 'linear-gradient(145deg, #fafafa 0%, #e5e5e5 100%)'
+                        : 'rgba(255, 255, 255, 0.08)',
+                      color: msg.isOwn ? '#0a0a0a' : 'var(--text-primary)',
                       fontSize: '0.9rem',
                       lineHeight: 1.5,
-                      boxShadow: msg.isOwn ? '0 4px 16px rgba(139, 92, 246, 0.25)' : 'none',
-                      border: msg.isOwn ? 'none' : '1px solid rgba(139, 92, 246, 0.08)',
+                      boxShadow: msg.isOwn ? '0 4px 16px rgba(0, 0, 0, 0.28)' : 'none',
+                      border: msg.isOwn ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
                     }}>
                       {msg.text}
                     </div>
@@ -238,7 +238,7 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
             {/* Input Bar */}
             <div style={{
               padding: '1rem 1rem',
-              borderTop: '1px solid rgba(139, 92, 246, 0.08)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
               background: 'rgba(0, 0, 0, 0.15)',
               paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
               flexShrink: 0,

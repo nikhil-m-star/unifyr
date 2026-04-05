@@ -1,10 +1,11 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Calendar, MapPin, Tag } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const HeroEvent = ({ event }) => {
   const isMobile = useIsMobile();
+  const reduceMotion = useReducedMotion();
   const rawEventDate = event.event_date || event.eventDate;
   const parsedEventDate = rawEventDate ? new Date(rawEventDate) : null;
   const formattedDate =
@@ -15,7 +16,8 @@ const HeroEvent = ({ event }) => {
   return (
     <motion.article
       className="market-card"
-      whileHover={isMobile ? undefined : { y: -6 }}
+      whileHover={reduceMotion || isMobile ? undefined : { y: -8, transition: { type: 'spring', stiffness: 380, damping: 26 } }}
+      whileTap={reduceMotion || isMobile ? undefined : { scale: 0.995 }}
       transition={{ duration: isMobile ? 0.16 : 0.25, ease: [0.16, 1, 0.3, 1] }}
     >
       <div

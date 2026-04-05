@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Compass, Edit, Menu, Radar, Users, X, MessageSquare } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
@@ -38,8 +38,9 @@ const NavItems = ({ onClose, isMobile = false }) => (
 const Navbar = ({ onTeamCreated }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
-  const [modalInitialTab, setModalInitialTab] = useState('create');
+  const [modalInitialTab] = useState('create');
   const isMobile = useIsMobile();
+  const reduceMotion = useReducedMotion();
 
   return (
     <>
@@ -47,7 +48,11 @@ const Navbar = ({ onTeamCreated }) => {
         className="top-nav"
         initial={isMobile ? false : { y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: isMobile ? 0.16 : 0.4, ease: [0.16, 1, 0.3, 1] }}
+        transition={
+          reduceMotion || isMobile
+            ? { duration: 0.16 }
+            : { type: 'spring', stiffness: 380, damping: 32, mass: 0.85 }
+        }
       >
         <div className="top-nav__row">
           <NavLink to="/" className="top-nav__brand" onClick={() => setMobileOpen(false)}>
@@ -70,9 +75,15 @@ const Navbar = ({ onTeamCreated }) => {
             </SignedIn>
 
             <SignedOut>
-              <NavLink to="/auth" className="btn-primary">
-                Sign In
-              </NavLink>
+              <motion.div
+                style={{ display: 'inline-flex' }}
+                whileHover={reduceMotion ? undefined : { scale: 1.04, transition: { type: 'spring', stiffness: 500, damping: 22 } }}
+                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+              >
+                <NavLink to="/auth" className="btn-primary">
+                  Sign In
+                </NavLink>
+              </motion.div>
             </SignedOut>
 
             <button
@@ -93,7 +104,7 @@ const Navbar = ({ onTeamCreated }) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={reduceMotion ? { duration: 0.2 } : { type: 'spring', stiffness: 420, damping: 32 }}
             >
               <div className="top-nav__mobile-links">
                 <NavItems isMobile onClose={() => setMobileOpen(false)} />
@@ -101,9 +112,14 @@ const Navbar = ({ onTeamCreated }) => {
 
               <div className="top-nav__mobile-header">
                 <SignedOut>
-                  <NavLink to="/auth" className="btn-primary" onClick={() => setMobileOpen(false)}>
-                    Sign In
-                  </NavLink>
+                  <motion.div
+                    style={{ display: 'flex', width: '100%' }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+                  >
+                    <NavLink to="/auth" className="btn-primary" onClick={() => setMobileOpen(false)} style={{ width: '100%', justifyContent: 'center' }}>
+                      Sign In
+                    </NavLink>
+                  </motion.div>
                 </SignedOut>
               </div>
             </motion.div>

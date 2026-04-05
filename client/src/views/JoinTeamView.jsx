@@ -30,7 +30,7 @@ const JoinTeamView = () => {
         } else {
           setStatus({ tone: 'error', message: 'Teammate post not found.' });
         }
-      } catch (error) {
+      } catch {
         setStatus({ tone: 'error', message: 'Failed to synchronize with team details.' });
       } finally {
         setLoading(false);
@@ -82,8 +82,8 @@ const JoinTeamView = () => {
   if (!team && status?.tone === 'error') {
     return (
       <div className="messages-empty" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="messages-empty__icon" style={{ background: 'rgba(244,63,94,0.06)', borderColor: 'rgba(244,63,94,0.12)' }}>
-          <AlertCircle size={28} color="var(--accent-rose)" />
+        <div className="messages-empty__icon" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }}>
+          <AlertCircle size={28} color="var(--text-muted)" />
         </div>
         <h2>Post Expired</h2>
         <p>{status.message}</p>
@@ -123,7 +123,7 @@ const JoinTeamView = () => {
               {team.description}
             </p>
 
-            <div style={{ padding: '1rem', background: 'rgba(139,92,246,0.03)', borderRadius: '14px', border: '1px solid rgba(139,92,246,0.06)' }}>
+            <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.04)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                 <Users size={14} color="var(--accent-primary)" />
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>Currently Looking For</span>
@@ -146,7 +146,7 @@ const JoinTeamView = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 className="join-success"
               >
-                <CheckCircle size={56} color="var(--accent-green)" style={{ marginBottom: '1.25rem' }} />
+                <CheckCircle size={56} color="var(--text-primary)" style={{ marginBottom: '1.25rem' }} />
                 <h2 style={{ fontSize: '1.6rem', marginBottom: '0.75rem' }}>Pitch Delivered!</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                   The team owner has been notified. Redirecting...
@@ -170,7 +170,7 @@ const JoinTeamView = () => {
                       minLength={10}
                     />
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                      <span style={{ fontSize: '0.72rem', color: pitch.length < 10 ? 'var(--accent-rose)' : 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '0.72rem', color: pitch.length < 10 ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
                         {pitch.length} / 1000
                       </span>
                     </div>

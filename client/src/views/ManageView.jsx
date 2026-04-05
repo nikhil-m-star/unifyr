@@ -70,9 +70,9 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
               <p className="manage-card__event">Event: {team.event_name || team.eventName}</p>
             </div>
             <span className="chip" style={{ 
-              background: team.status === 'closed' ? 'rgba(236,72,153,0.08)' : 'rgba(139,92,246,0.08)', 
-              color: team.status === 'closed' ? 'var(--accent-rose)' : 'var(--accent-secondary)',
-              border: `1px solid ${team.status === 'closed' ? 'rgba(236,72,153,0.15)' : 'rgba(139,92,246,0.15)'}`
+              background: team.status === 'closed' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)', 
+              color: team.status === 'closed' ? 'var(--text-muted)' : 'var(--text-primary)',
+              border: `1px solid ${team.status === 'closed' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.14)'}`
             }}>
               {team.status || 'open'}
             </span>
@@ -83,7 +83,7 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
           {team.looking_for && (
             <div className="manage-card__seeking">
               <span className="manage-card__seeking-label">Looking for</span>
-              <span className="chip" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.1)' }}>
+              <span className="chip" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 {team.looking_for}
               </span>
             </div>
@@ -96,7 +96,7 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
             <button type="button" className="btn-secondary" onClick={() => setIsEditing(true)} disabled={busyId?.includes(team.id)}>
               <Edit size={14} /> Edit
             </button>
-            <button type="button" className="btn-ghost" onClick={() => onAction('delete', team.id)} disabled={busyId === `delete-${team.id}`} style={{ color: 'var(--accent-rose)', marginLeft: 'auto' }}>
+            <button type="button" className="btn-ghost" onClick={() => onAction('delete', team.id)} disabled={busyId === `delete-${team.id}`} style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>
               <Trash2 size={16} />
             </button>
           </div>

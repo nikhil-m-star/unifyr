@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { Users, ExternalLink, ArrowRight } from 'lucide-react';
@@ -9,11 +9,13 @@ const TeamPost = ({ team }) => {
   const navigate = useNavigate();
   const { isSignedIn } = useAuth();
   const isMobile = useIsMobile();
+  const reduceMotion = useReducedMotion();
 
   return (
     <motion.article 
       className="team-card" 
-      whileHover={isMobile ? undefined : { y: -3 }} 
+      whileHover={reduceMotion || isMobile ? undefined : { y: -4, transition: { type: 'spring', stiffness: 400, damping: 30 } }}
+      whileTap={reduceMotion || isMobile ? undefined : { scale: 0.992 }}
       transition={{ duration: 0.2 }}
       style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
     >
@@ -25,11 +27,11 @@ const TeamPost = ({ team }) => {
         </div>
 
         <span className="chip" style={{ 
-          background: 'rgba(139,92,246,0.06)', 
-          color: 'var(--accent-secondary)',
+          background: 'rgba(255,255,255,0.06)', 
+          color: 'var(--text-secondary)',
           padding: '4px 10px',
           fontSize: '0.72rem',
-          border: '1px solid rgba(139,92,246,0.12)'
+          border: '1px solid rgba(255,255,255,0.1)'
         }}>
           Recruiting
         </span>
@@ -43,8 +45,8 @@ const TeamPost = ({ team }) => {
       </p>
 
       <div style={{ 
-        padding: '10px 14px', background: 'rgba(139,92,246,0.03)', borderRadius: '12px',
-        marginBottom: '1.25rem', border: '1px solid rgba(139,92,246,0.06)'
+        padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px',
+        marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.08)'
       }}>
         <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '3px', letterSpacing: '0.04em' }}>
           Seeking

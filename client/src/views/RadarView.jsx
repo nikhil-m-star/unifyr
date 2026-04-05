@@ -125,7 +125,6 @@ const RadarView = ({ globalSocket }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <div className="section-kicker">Active now</div>
                   <span className="text-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-teal)', boxShadow: '0 0 6px var(--accent-teal)' }} />
                     {activeUsers.length} online
                   </span>
                 </div>

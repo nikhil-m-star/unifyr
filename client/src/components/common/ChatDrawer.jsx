@@ -167,7 +167,6 @@ const ChatDrawer = ({ isOpen, onClose, partner, sessionId, socket }) => {
                     {partner?.name || 'Teammate'}
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ width: '7px', height: '7px', background: 'var(--accent-teal)', borderRadius: '50%', boxShadow: '0 0 8px var(--accent-teal)' }} />
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Active
                     </span>

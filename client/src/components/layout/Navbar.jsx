@@ -63,7 +63,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [modalInitialTab] = useState('create');
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
@@ -80,7 +80,10 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
       }
 
       try {
-        const response = await axios.get('/users/me');
+        const token = await getToken();
+        const response = await axios.get('/users/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (isMounted) {
           setIsAdmin(Boolean(response.data?.isAdmin));
         }
@@ -95,7 +98,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
     return () => {
       isMounted = false;
     };
-  }, [isSignedIn]);
+  }, [isSignedIn, getToken]);
 
   useEffect(() => {
     setMobileMoreOpen(false);

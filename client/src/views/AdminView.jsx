@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import axios from '../api/axios';
 
 const AdminView = () => {
@@ -16,11 +17,17 @@ const AdminView = () => {
     imageUrl: '',
     description: '',
   });
+  const { getToken } = useAuth();
 
   const fetchOverview = async () => {
     setLoading(true);
     try {
-      const meResponse = await axios.get('/users/me');
+      const token = await getToken();
+      const authHeaders = { Authorization: `Bearer ${token}` };
+
+      const meResponse = await axios.get('/users/me', {
+        headers: authHeaders,
+      });
       const adminState = Boolean(meResponse.data?.isAdmin);
       setIsAdmin(adminState);
 
@@ -29,7 +36,9 @@ const AdminView = () => {
         return;
       }
 
-      const overviewResponse = await axios.get('/admin/overview');
+      const overviewResponse = await axios.get('/admin/overview', {
+        headers: authHeaders,
+      });
       setUsers(Array.isArray(overviewResponse.data?.users) ? overviewResponse.data.users : []);
       setTeams(Array.isArray(overviewResponse.data?.teams) ? overviewResponse.data.teams : []);
       setEvents(Array.isArray(overviewResponse.data?.events) ? overviewResponse.data.events : []);
@@ -43,7 +52,7 @@ const AdminView = () => {
 
   useEffect(() => {
     fetchOverview();
-  }, []);
+  }, [getToken]);
 
   const stats = useMemo(
     () => ({
@@ -116,7 +125,10 @@ const AdminView = () => {
 
   const updateUserRole = async (id, role) => {
     try {
-      await axios.patch(`/admin/users/${id}/role`, { role });
+      const token = await getToken();
+      await axios.patch(`/admin/users/${id}/role`, { role }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, role } : user)));
     } catch (error) {
       console.error('Failed to update user role:', error);
@@ -126,12 +138,15 @@ const AdminView = () => {
 
   const updateTeam = async (team) => {
     try {
+      const token = await getToken();
       await axios.patch(`/admin/teams/${team.id}`, {
         eventName: team.event_name || '',
         teamName: team.team_name || '',
         description: team.description || '',
         lookingFor: team.looking_for || '',
         status: team.status || 'open',
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       window.alert('Team updated.');
     } catch (error) {
@@ -143,7 +158,10 @@ const AdminView = () => {
   const deleteTeam = async (id) => {
     if (!window.confirm('Delete this team request?')) return;
     try {
-      await axios.delete(`/admin/teams/${id}`);
+      const token = await getToken();
+      await axios.delete(`/admin/teams/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setTeams((prev) => prev.filter((team) => team.id !== id));
     } catch (error) {
       console.error('Failed to delete team:', error);
@@ -153,12 +171,15 @@ const AdminView = () => {
 
   const updateEvent = async (event) => {
     try {
+      const token = await getToken();
       await axios.patch(`/admin/events/${event.id}`, {
         title: event.title || '',
         category: event.category || '',
         imageUrl: event.image_url || '',
         description: event.description || '',
         eventDate: event.event_date ? new Date(event.event_date).toISOString() : null,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       window.alert('Event updated.');
     } catch (error) {
@@ -170,7 +191,10 @@ const AdminView = () => {
   const deleteEvent = async (id) => {
     if (!window.confirm('Delete this event?')) return;
     try {
-      await axios.delete(`/admin/events/${id}`);
+      const token = await getToken();
+      await axios.delete(`/admin/events/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setEvents((prev) => prev.filter((event) => event.id !== id));
     } catch (error) {
       console.error('Failed to delete event:', error);
@@ -185,12 +209,15 @@ const AdminView = () => {
     }
 
     try {
+      const token = await getToken();
       const response = await axios.post('/admin/events', {
         title: newEvent.title.trim(),
         category: newEvent.category.trim(),
         imageUrl: newEvent.imageUrl.trim(),
         description: newEvent.description.trim(),
         eventDate: newEvent.eventDate ? new Date(newEvent.eventDate).toISOString() : null,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const created = response.data?.event;
@@ -348,8 +375,8 @@ const AdminView = () => {
                     value={user.role}
                     onChange={(event) => updateUserRole(user.id, event.target.value)}
                   >
-                    <option value="student">student</option>
-                    <option value="admin">admin</option>
+                    <option value="student">Student</option>
+                    <option value="admin">Admin</option>
                   </select>
                 </div>
               </div>

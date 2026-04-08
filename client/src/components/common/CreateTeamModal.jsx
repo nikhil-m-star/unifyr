@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import axios from '../../api/axios';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -10,6 +11,7 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState(null);
   const { getToken } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
 
@@ -60,6 +62,8 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
       setTimeout(() => {
         onCreated?.();
         onClose();
+        navigate('/');
+        window.location.reload();
       }, 1500);
     } catch (error) {
       setStatus({

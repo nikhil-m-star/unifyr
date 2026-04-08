@@ -10,6 +10,7 @@ import RadarView from './views/RadarView';
 import ManageView from './views/ManageView';
 import JoinTeamView from './views/JoinTeamView';
 import MessagesView from './views/MessagesView';
+import ActiveEventsView from './views/ActiveEventsView';
 import { ChatProvider, useChat } from './context/ChatContext';
 import ChatDrawer from './components/common/ChatDrawer';
 
@@ -98,6 +99,7 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/events/active" element={<ActiveEventsView />} />
           <Route
             path="/manage"
             element={

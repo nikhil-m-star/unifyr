@@ -58,6 +58,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const utsavRoutes = require('./routes/utsavRoutes');
 const notificationService = require('./services/notificationService');
 
 const server = http.createServer(app);
@@ -91,6 +92,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/utsav', utsavRoutes);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

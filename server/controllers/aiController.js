@@ -1,7 +1,24 @@
 const { fetchUtsavEvents } = require('../services/utsavService');
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MAX_AI_EVENTS = 32;
+const MAX_AI_EVENTS = 36;
+const STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'from', 'that', 'this', 'want', 'looking', 'need', 'open',
+  'events', 'event', 'show', 'find', 'best', 'good', 'nice', 'like', 'campus',
+]);
+const TOKEN_ALIASES = {
+  ai: ['ai', 'ml', 'machine', 'learning', 'genai', 'llm', 'neural'],
+  ml: ['ai', 'ml', 'machine', 'learning', 'genai', 'llm', 'neural'],
+  coding: ['coding', 'code', 'developer', 'programming', 'hack', 'hackathon', 'tech', 'software'],
+  programing: ['coding', 'code', 'developer', 'programming', 'hack', 'hackathon', 'tech', 'software'],
+  music: ['music', 'band', 'dj', 'singing', 'concert', 'battle'],
+  dance: ['dance', 'choreo', 'choreography', 'crew'],
+  startup: ['startup', 'entrepreneur', 'pitch', 'business', 'innovation'],
+  gaming: ['gaming', 'game', 'esports', 'bgmi', 'valorant', 'fifa'],
+  design: ['design', 'ui', 'ux', 'creative', 'poster', 'art'],
+  workshop: ['workshop', 'hands', 'practical', 'bootcamp'],
+  beginner: ['beginner', 'intro', 'basic', 'foundation'],
+};
 
 const toCompactEvent = (event) => ({
   id: event.id,
@@ -20,17 +37,50 @@ const normalize = (value = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const promptTokens = (prompt = '') => normalize(prompt).split(' ').filter((token) => token.length > 2);
+const promptTokens = (prompt = '') =>
+  normalize(prompt)
+    .split(' ')
+    .filter((token) => token.length > 2 && !STOPWORDS.has(token));
+
+const expandPromptTokens = (tokens) => {
+  const expanded = new Set(tokens);
+  tokens.forEach((token) => {
+    const aliases = TOKEN_ALIASES[token] || [];
+    aliases.forEach((alias) => expanded.add(alias));
+  });
+  return [...expanded];
+};
+
+const tokenHits = (text, tokens) => {
+  if (!text || !tokens.length) return 0;
+  return tokens.reduce((hits, token) => (text.includes(token) ? hits + 1 : hits), 0);
+};
+
+const lexicalScore = (event, tokens) => {
+  if (!tokens.length) return event.registration_open ? 0.3 : 0.1;
+
+  const title = normalize(event.title);
+  const category = normalize(event.category);
+  const venue = normalize(event.venue);
+  const description = normalize(event.description);
+
+  const titleHits = tokenHits(title, tokens);
+  const categoryHits = tokenHits(category, tokens);
+  const venueHits = tokenHits(venue, tokens);
+  const descriptionHits = tokenHits(description, tokens);
+
+  const weightedHits = (titleHits * 3) + (categoryHits * 2.2) + (venueHits * 1.2) + descriptionHits;
+  const normalizedScore = weightedHits / (tokens.length * 3.6);
+  const registrationBoost = event.registration_open ? 0.12 : 0;
+  return Math.min(1, normalizedScore + registrationBoost);
+};
 
 const scoreEventForPrompt = (event, tokens) => {
-  if (!tokens.length) return event.registration_open ? 1 : 0;
-  const haystack = normalize([event.title, event.category, event.venue, event.description].filter(Boolean).join(' '));
-  const matched = tokens.filter((token) => haystack.includes(token)).length;
-  return matched + (event.registration_open ? 0.35 : 0);
+  return lexicalScore(event, tokens);
 };
 
 const selectCandidateEvents = (events, prompt) => {
-  const tokens = promptTokens(prompt);
+  const tokens = expandPromptTokens(promptTokens(prompt));
 
   return [...events]
     .map((event) => ({ event, score: scoreEventForPrompt(event, tokens) }))
@@ -85,6 +135,7 @@ const recommendEvents = async (req, res) => {
 
     const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
     const events = await fetchUtsavEvents();
+    const expandedTokens = expandPromptTokens(promptTokens(prompt));
     const candidateEvents = selectCandidateEvents(events, prompt);
     const compactEvents = candidateEvents.map(toCompactEvent);
 
@@ -102,7 +153,7 @@ const recommendEvents = async (req, res) => {
           {
             role: 'system',
             content:
-              'You are an event recommendation engine. Return only strict JSON with shape {"recommendations":[{"id":"event-id","score":0-1,"reason":"short reason"}]}. Pick up to 8 highly relevant events from provided list. Prefer registration_open=true.',
+              'You are an event recommendation engine. Return only strict JSON with shape {"recommendations":[{"id":"event-id","score":0-1,"reason":"short reason"}]}. Pick up to 8 highly relevant events from provided list. Strongly prioritize semantic relevance to the user prompt and explicit keyword overlap. Prefer registration_open=true as a tie-breaker only.',
           },
           {
             role: 'user',
@@ -135,13 +186,17 @@ const recommendEvents = async (req, res) => {
       .map((row) => {
         const event = byId.get(String(row.id));
         if (!event) return null;
+        const aiScore = Number(row.score) || 0;
+        const relevance = lexicalScore(event, expandedTokens);
+        const combinedScore = Math.min(1, (aiScore * 0.68) + (relevance * 0.32));
         return {
           ...event,
-          ai_score: Number(row.score) || 0,
+          ai_score: combinedScore,
           ai_reason: row.reason || 'Matches your preference.',
         };
       })
       .filter(Boolean)
+      .sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0))
       .slice(0, 8);
 
     return res.status(200).json({ recommendations });

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ExternalLink, Filter, MapPin, Sparkles, Loader2, Info } from 'lucide-react';
+import { Calendar, ExternalLink, Filter, MapPin, Sparkles, Loader2, Info, Ticket } from 'lucide-react';
 import axios from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -63,7 +63,7 @@ const ActiveEventsView = () => {
           <Sparkles size={24} color="#ff3e00" style={{ marginTop: '8px' }} />
         </div>
         <p className="messages-subtitle" style={{ maxWidth: '600px' }}>
-          Real-time event listing from **Utsav 2026**. Discover competitions, workshops, and performances happening across the campus.
+          Real-time event listing from Utsav 2026. Discover competitions, workshops, and performances happening across the campus.
         </p>
       </motion.header>
 
@@ -118,56 +118,38 @@ const ActiveEventsView = () => {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.25, delay: index * 0.05 }}
             >
-              <GlassCard style={{ padding: '0', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ 
-                  height: '180px', 
-                  backgroundImage: `url(${event.image_url})`, 
-                  backgroundSize: 'cover', 
-                  backgroundPosition: 'center',
-                  position: 'relative'
-                }}>
-                  <div style={{ 
-                    position: 'absolute', 
-                    top: '12px', 
-                    right: '12px',
-                    background: 'rgba(0,0,0,0.6)',
-                    backdropFilter: 'blur(8px)',
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.1)'
-                  }}>
+              <GlassCard className="utsav-event-card">
+                <div className="utsav-event-card__poster-wrap">
+                  <img
+                    className="utsav-event-card__poster"
+                    src={event.image_url}
+                    alt={event.title}
+                    loading="lazy"
+                  />
+                  <div className="utsav-event-card__category">
                     {event.category}
                   </div>
                 </div>
 
-                <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ fontSize: '1.4rem', marginBottom: '8px', color: '#fff' }}>{event.title}</h3>
-                  <p style={{ 
-                    fontSize: '0.9rem', 
-                    color: 'var(--text-secondary)', 
-                    marginBottom: '20px',
-                    lineHeight: 1.6,
-                    flex: 1
-                  }}>
+                <div className="utsav-event-card__body">
+                  <h3 className="utsav-event-card__title">{event.title}</h3>
+                  <p className="utsav-event-card__description">
                     {event.description}
                   </p>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    gap: '12px',
-                    paddingTop: '16px',
-                    borderTop: '1px solid rgba(255,255,255,0.06)' 
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="utsav-event-card__meta-wrap">
+                    <div className="utsav-event-card__meta">
+                      <div className="inline-stack">
                         <Calendar size={14} /> {formatEventDate(event.date)}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div className="inline-stack">
                         <MapPin size={14} /> {event.venue || 'BMSCE Campus'}
+                      </div>
+                    </div>
+
+                    <div className="utsav-event-card__meta">
+                      <div className="inline-stack">
+                        <Ticket size={14} /> {event.registration_open ? 'Registration Open' : 'Registration Closed'}
                       </div>
                     </div>
 
@@ -175,14 +157,7 @@ const ActiveEventsView = () => {
                       href={event.registration_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn-primary"
-                      style={{ 
-                        width: '100%', 
-                        background: 'linear-gradient(135deg, #ff3e00 0%, #ff7e00 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        marginTop: '4px'
-                      }}
+                      className="utsav-event-card__cta"
                     >
                       Official Page <ExternalLink size={14} style={{ marginLeft: '4px' }} />
                     </a>

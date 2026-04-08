@@ -1,56 +1,77 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Calendar, MapPin, Tag } from 'lucide-react';
+import { Calendar, ExternalLink, MapPin, Tag } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
+
+const formatEventDate = (dateText) => {
+  if (!dateText) {
+    return 'Date TBD';
+  }
+
+  const parsed = new Date(dateText);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  return dateText;
+};
 
 const HeroEvent = ({ event }) => {
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
-  const rawEventDate = event.event_date || event.eventDate;
-  const parsedEventDate = rawEventDate ? new Date(rawEventDate) : null;
-  const formattedDate =
-    parsedEventDate && !Number.isNaN(parsedEventDate.getTime())
-      ? parsedEventDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-      : 'Date TBD';
+  const formattedDate = formatEventDate(event.date || event.event_date || event.eventDate);
+  const description = (event.description || '').trim();
+  const shortDescription = description.length > 160 ? `${description.slice(0, 157)}...` : description;
 
   return (
     <motion.article
-      className="market-card"
+      className="utsav-feature-card"
       whileHover={reduceMotion || isMobile ? undefined : { y: -8, transition: { type: 'spring', stiffness: 380, damping: 26 } }}
       whileTap={reduceMotion || isMobile ? undefined : { scale: 0.995 }}
       transition={{ duration: isMobile ? 0.16 : 0.25, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div
-        className="market-card__media"
-        style={{
-          backgroundImage: `url(${
+      <div className="utsav-feature-card__poster-wrap">
+        <img
+          className="utsav-feature-card__poster"
+          src={
             event.image_url ||
             event.imageUrl ||
-            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1000'
-          })`,
-        }}
-      />
-      <div className="market-card__shade" />
+            'https://events.utsavbmsce.in/ut-2026.svg'
+          }
+          alt={event.title || 'Event poster'}
+          loading="lazy"
+        />
+      </div>
 
-      <div className="market-card__content">
+      <div className="utsav-feature-card__content">
         <span className="card-pill card-pill--light">
           <Tag size={12} />
           {event.category || 'Featured'}
         </span>
 
-        <h3>{event.title}</h3>
-        <p>{event.description}</p>
+        <h3 className="utsav-feature-card__title">{event.title}</h3>
+        <p className="utsav-feature-card__description">{shortDescription || 'Explore this event on the official Utsav portal.'}</p>
 
-        <div className="card-meta">
+        <div className="card-meta utsav-feature-card__meta">
           <span className="inline-stack">
             <Calendar size={14} />
             {formattedDate}
           </span>
           <span className="inline-stack">
             <MapPin size={14} />
-            Campus venue
+            {event.venue || 'BMSCE Campus'}
           </span>
         </div>
+
+        <a
+          className="utsav-feature-card__cta"
+          href={event.registration_url || 'https://events.utsavbmsce.in/events'}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open ${event.title || 'event'} on official portal`}
+        >
+          Official Page <ExternalLink size={14} />
+        </a>
       </div>
     </motion.article>
   );

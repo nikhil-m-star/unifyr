@@ -635,6 +635,187 @@ img {
   font-weight: 600;
 }
 
+.utsav-feature-card {
+  min-height: 470px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(244, 208, 63, 0.24);
+  background:
+    radial-gradient(circle at top, rgba(110, 26, 145, 0.26), rgba(8, 8, 8, 0.95) 55%),
+    linear-gradient(170deg, rgba(12, 10, 26, 0.98), rgba(8, 8, 8, 0.98));
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.utsav-feature-card__poster-wrap {
+  height: 260px;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background:
+    radial-gradient(circle at center, rgba(244, 208, 63, 0.16), rgba(8, 8, 8, 0.2) 60%),
+    linear-gradient(140deg, rgba(22, 16, 46, 0.92), rgba(10, 10, 10, 0.95));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.utsav-feature-card__poster {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 14px;
+}
+
+.utsav-feature-card__content {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.utsav-feature-card__title {
+  margin-top: 2px;
+  color: #fff;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.utsav-feature-card__description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.utsav-feature-card__meta {
+  margin-top: auto;
+  margin-bottom: 6px;
+}
+
+.utsav-feature-card__cta {
+  margin-top: 4px;
+  width: 100%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 208, 63, 0.35);
+  background: linear-gradient(135deg, #6e1a91, #9a3cbf 60%, #f4d03f);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.utsav-event-card.surface-card {
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(244, 208, 63, 0.24);
+  background:
+    radial-gradient(circle at top, rgba(110, 26, 145, 0.24), rgba(8, 8, 8, 0.95) 52%),
+    linear-gradient(170deg, rgba(12, 10, 26, 0.98), rgba(8, 8, 8, 0.98));
+}
+
+.utsav-event-card__poster-wrap {
+  height: 240px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background:
+    radial-gradient(circle at center, rgba(244, 208, 63, 0.16), rgba(8, 8, 8, 0.2) 60%),
+    linear-gradient(140deg, rgba(22, 16, 46, 0.92), rgba(10, 10, 10, 0.95));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.utsav-event-card__poster {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.utsav-event-card__category {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #f4d03f;
+  background: rgba(12, 10, 26, 0.75);
+  border: 1px solid rgba(244, 208, 63, 0.35);
+}
+
+.utsav-event-card__body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.utsav-event-card__title {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.utsav-event-card__description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.utsav-event-card__meta-wrap {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+}
+
+.utsav-event-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.utsav-event-card__cta {
+  margin-top: 2px;
+  width: 100%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 208, 63, 0.35);
+  background: linear-gradient(135deg, #6e1a91, #9a3cbf 58%, #f4d03f);
+  color: #fff;
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 /* ─── Team Card ─── */
 
 .team-grid {
@@ -1119,6 +1300,17 @@ img {
   }
 
   .market-card { min-height: 400px; }
+  .utsav-feature-card {
+    min-height: 430px;
+  }
+  .utsav-feature-card__poster-wrap {
+    height: 220px;
+    padding: 10px;
+  }
+  .utsav-event-card__poster-wrap {
+    height: 210px;
+    padding: 10px;
+  }
   .market-card__media { transition-duration: 0.25s; }
   .market-card:hover .market-card__media { transform: none; }
   .team-card:hover { box-shadow: var(--shadow-soft); transform: none; }

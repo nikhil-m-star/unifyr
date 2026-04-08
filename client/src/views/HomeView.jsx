@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { useAuth } from '@clerk/clerk-react';
 import { ArrowLeft, ArrowRight, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import HeroEvent from '../components/common/HeroEvent';
 import TeamPost from '../components/common/TeamPost';
 import CreateTeamModal from '../components/common/CreateTeamModal';
@@ -57,11 +59,13 @@ const MiniEventGroup = ({ group, isMobile }) => {
 };
 
 const HomeView = ({ refreshToken = 0 }) => {
-  const [events, setEvents] = useState([]);
+  const [featuredEvents, setFeaturedEvents] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
   const carouselRef = useRef(null);
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
@@ -70,8 +74,10 @@ const HomeView = ({ refreshToken = 0 }) => {
     const fetchHomeData = async () => {
       setLoading(true);
       try {
-        const [eventsRes, teamsRes] = await Promise.all([axios.get('/events'), axios.get('/teams')]);
-        setEvents(eventsRes.data);
+        const [utsavRes, teamsRes] = await Promise.all([axios.get('/utsav'), axios.get('/teams')]);
+        const utsavEvents = Array.isArray(utsavRes.data) ? utsavRes.data : [];
+        const sorted = [...utsavEvents].sort((a, b) => Number(b.registration_open) - Number(a.registration_open));
+        setFeaturedEvents(sorted.slice(0, 14));
         setTeams(teamsRes.data);
       } catch (error) {
         console.error('Failed to fetch discovery feed:', error);
@@ -84,7 +90,7 @@ const HomeView = ({ refreshToken = 0 }) => {
   }, [refreshToken]);
 
   useEffect(() => {
-    if (events.length <= 1) return undefined;
+    if (featuredEvents.length <= 1) return undefined;
     const interval = setInterval(() => {
       const container = carouselRef.current;
       if (!container) return;
@@ -100,7 +106,7 @@ const HomeView = ({ refreshToken = 0 }) => {
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [events]);
+  }, [featuredEvents]);
 
   const scrollCarousel = (direction) => {
     const container = carouselRef.current;
@@ -111,7 +117,7 @@ const HomeView = ({ refreshToken = 0 }) => {
     container.scrollBy({ left: direction * amount, behavior: 'smooth' });
   };
 
-  const filteredEvents = events;
+  const filteredEvents = featuredEvents;
 
   const filteredTeams = teams.filter(t => 
     t.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -195,19 +201,17 @@ const HomeView = ({ refreshToken = 0 }) => {
             type="button" 
             className="btn-primary" 
             style={{ padding: '14px 28px', fontSize: '1rem', borderRadius: '14px' }}
-            onClick={() => setIsCreateTeamOpen(true)}
+            onClick={() => {
+              if (!isSignedIn) {
+                navigate('/auth');
+                return;
+              }
+              setIsCreateTeamOpen(true);
+            }}
           >
             Post Recruitment
           </button>
         </div>
-
-        <CreateTeamModal
-          isOpen={isCreateTeamOpen}
-          onClose={() => setIsCreateTeamOpen(false)}
-          onCreated={() => {
-            // No-op for now as listing update happens via websocket or interval usually
-          }}
-        />
       </motion.section>
 
       <motion.section
@@ -237,6 +241,14 @@ const HomeView = ({ refreshToken = 0 }) => {
           </div>
         )}
       </motion.section>
+
+      <CreateTeamModal
+        isOpen={isCreateTeamOpen}
+        onClose={() => setIsCreateTeamOpen(false)}
+        onCreated={() => {
+          // Refresh data if needed, or rely on interval
+        }}
+      />
     </div>
   );
 };

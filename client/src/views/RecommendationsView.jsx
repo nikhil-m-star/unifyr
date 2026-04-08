@@ -16,11 +16,11 @@ const RecommendationsView = () => {
     <div className="market-shell">
       <div className="messages-header">
         <h1 className="page-title">AI Recommendations</h1>
-        <p className="messages-subtitle">Describe your vibe and get matching active events instantly.</p>
+        <p className="messages-subtitle">Describe what you want. We will shortlist the best active events.</p>
       </div>
 
       <div className="ai-reco-card">
-        <div className="ai-reco-kicker"><Brain size={15} /> Tell us what kind of event you want</div>
+        <div className="ai-reco-kicker"><Brain size={15} /> Preference Input</div>
         <form
           className="form-stack"
           onSubmit={async (event) => {
@@ -49,7 +49,7 @@ const RecommendationsView = () => {
             style={{ resize: 'vertical', minHeight: '120px' }}
           />
           <button type="submit" className="btn-primary" disabled={!prompt.trim()}>
-            <Sparkles size={16} /> Get Recommendations
+            <Sparkles size={16} /> Find Matches
           </button>
         </form>
       </div>
@@ -57,8 +57,7 @@ const RecommendationsView = () => {
       {submittedPrompt && (
         <div className="ai-results">
           <div className="ai-results__head">
-            <span className="section-kicker">For You</span>
-            <p className="ai-results__query">"{submittedPrompt}"</p>
+            <p className="ai-results__query">Results for: {submittedPrompt}</p>
           </div>
 
           {loading ? (
@@ -89,7 +88,7 @@ const RecommendationsView = () => {
                 {event.ai_reason && (
                   <p className="ai-result-item__reason">{event.ai_reason}</p>
                 )}
-                <div className="ai-result-item__cta">Open Official Page <ArrowUpRight size={14} /></div>
+                <div className="ai-result-item__cta">Open <ArrowUpRight size={14} /></div>
               </a>
             ))
           ) : (

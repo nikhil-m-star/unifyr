@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Bell, Compass, Edit, LogIn, MoreHorizontal, Shield, MessageSquare, Sparkles, Ticket, User } from 'lucide-react';
+import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Sparkles, User } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton, useAuth } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -22,11 +22,11 @@ const NavItems = ({
 }) => (
   <>
     <NavLink to="/" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
-      <Compass size={18} />
-      Discover
+      <House size={18} />
+      Home
     </NavLink>
     <NavLink to="/events/active" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
-      <Ticket size={18} />
+      <Compass size={18} />
       Active Events
     </NavLink>
     <NavLink to="/recommendations" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
@@ -102,17 +102,17 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   }, [location.pathname, isMobile]);
 
   const baseNavItems = [
-    { to: '/', label: 'Discover', icon: Compass },
-    { to: '/events/active', label: 'Events', icon: Ticket },
+    { to: '/', label: 'Home', icon: House },
+    { to: '/events/active', label: 'Events', icon: Compass },
   ];
 
   const signedInPrimaryNavItems = [
-    { to: '/messages', label: 'Messages', icon: MessageSquare },
-    { to: '/notifications', label: 'Notifications', icon: Bell },
+    { to: '/recommendations', label: 'AI', icon: Sparkles },
+    { to: '/notifications', label: 'Alerts', icon: Bell },
   ];
 
   const signedInOverflowNavItems = [
-    { to: '/recommendations', label: 'AI', icon: Sparkles },
+    { to: '/messages', label: 'Chats', icon: MessageSquare },
     { to: '/manage', label: 'Manage', icon: Edit },
   ];
 
@@ -217,7 +217,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
                 <Icon size={19} />
                 {item.to === '/notifications' && <NotificationBadge count={unreadNotificationCount} />}
                 {item.to === '/messages' && <NotificationBadge count={unreadMessageCount} tone="danger" />}
-                <span className="sr-only">{item.label}</span>
+                <span className="mobile-pill-nav__label">{item.label}</span>
               </NavLink>
             );
           })}
@@ -231,7 +231,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
               aria-expanded={mobileMoreOpen}
             >
               <MoreHorizontal size={19} />
-              <span className="sr-only">More</span>
+              <span className="mobile-pill-nav__label">More</span>
             </button>
           )}
         </motion.nav>

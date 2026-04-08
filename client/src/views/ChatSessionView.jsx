@@ -143,7 +143,6 @@ const ChatSessionView = ({ socket }) => {
             </div>
             <div>
               <h3 className="chat-page__name">{partner?.name || 'Teammate'}</h3>
-              <span className="chat-page__status">Active</span>
             </div>
           </div>
         </div>

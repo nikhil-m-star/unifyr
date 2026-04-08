@@ -1485,9 +1485,11 @@ img {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+    gap: 2px;
     width: 44px;
     min-width: 44px;
-    height: 44px;
+    height: 48px;
     border-radius: 999px;
     color: var(--text-muted);
     border: 1px solid transparent;
@@ -1497,8 +1499,16 @@ img {
   }
 
   .mobile-pill-nav__item svg {
-    width: 22px;
-    height: 22px;
+    width: 19px;
+    height: 19px;
+  }
+
+  .mobile-pill-nav__label {
+    font-size: 0.56rem;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: inherit;
   }
 
 .mobile-pill-nav__item .nav-badge {
@@ -1798,10 +1808,6 @@ img {
   font-size: 1.1rem;
 }
 
-.msg-status-dot {
-  display: none;
-}
-
 .msg-content {
   flex: 1;
   min-width: 0;
@@ -2078,14 +2084,6 @@ img {
   font-family: var(--font-display);
   margin: 0;
   color: var(--text-primary);
-}
-
-.chat-page__status {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .chat-page__messages {
@@ -2777,12 +2775,16 @@ img {
   .mobile-pill-nav__item {
     width: 40px;
     min-width: 40px;
-    height: 40px;
+    height: 44px;
   }
 
   .mobile-pill-nav__item svg {
-    width: 20px;
-    height: 20px;
+    width: 17px;
+    height: 17px;
+  }
+
+  .mobile-pill-nav__label {
+    font-size: 0.52rem;
   }
 
   .mobile-pill-nav__more-sheet {

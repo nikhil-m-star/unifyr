@@ -137,7 +137,6 @@ const MessagesView = () => {
                       <span>{session.partner_name?.charAt(0) || 'U'}</span>
                     )}
                   </div>
-                  <span className="msg-status-dot" />
                 </div>
 
                 <div className="msg-content">

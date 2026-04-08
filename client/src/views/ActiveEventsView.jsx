@@ -57,10 +57,10 @@ const ActiveEventsView = () => {
         initial={isMobile ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <span className="section-kicker" style={{ color: '#ff3e00' }}>Live from BMSCE</span>
+        <span className="section-kicker" style={{ color: 'rgba(255,255,255,0.8)' }}>Live from BMSCE</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 className="page-title">Active Events</h1>
-          <Sparkles size={24} color="#ff3e00" style={{ marginTop: '8px' }} />
+          <Sparkles size={24} color="rgba(255,255,255,0.8)" style={{ marginTop: '8px' }} />
         </div>
         <p className="messages-subtitle" style={{ maxWidth: '600px' }}>
           Real-time event listing from Utsav 2026. Discover competitions, workshops, and performances happening across the campus.
@@ -68,8 +68,8 @@ const ActiveEventsView = () => {
       </motion.header>
 
       <div style={{ 
-        background: 'rgba(255, 62, 0, 0.05)', 
-        border: '1px solid rgba(255, 62, 0, 0.15)', 
+        background: 'rgba(255, 255, 255, 0.04)', 
+        border: '1px solid rgba(255, 255, 255, 0.15)', 
         padding: '12px 20px', 
         borderRadius: '16px', 
         marginBottom: '2.5rem',
@@ -79,7 +79,7 @@ const ActiveEventsView = () => {
         color: 'var(--text-secondary)',
         fontSize: '0.9rem'
       }}>
-        <Info size={18} color="#ff3e00" />
+        <Info size={18} color="rgba(255,255,255,0.85)" />
         <span>These events are managed by the Utsav BMSCE committee. Registration links point to the official portal.</span>
       </div>
 
@@ -91,9 +91,9 @@ const ActiveEventsView = () => {
             className={`chip ${filter === cat ? 'chip--active' : ''}`}
             style={{ 
               cursor: 'pointer',
-              background: filter === cat ? '#ff3e00' : 'rgba(255,255,255,0.05)',
-              color: filter === cat ? '#fff' : 'var(--text-secondary)',
-              border: filter === cat ? '1px solid #ff3e00' : '1px solid rgba(255,255,255,0.1)',
+              background: filter === cat ? '#ffffff' : 'rgba(255,255,255,0.05)',
+              color: filter === cat ? '#101010' : 'var(--text-secondary)',
+              border: filter === cat ? '1px solid #ffffff' : '1px solid rgba(255,255,255,0.1)',
               padding: '8px 18px',
               fontSize: '0.86rem'
             }}

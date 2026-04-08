@@ -638,14 +638,16 @@ img {
 .utsav-feature-card {
   min-height: 470px;
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(244, 208, 63, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   background:
-    radial-gradient(circle at top, rgba(110, 26, 145, 0.26), rgba(8, 8, 8, 0.95) 55%),
-    linear-gradient(170deg, rgba(12, 10, 26, 0.98), rgba(8, 8, 8, 0.98));
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.1), rgba(8, 8, 8, 0.95) 50%),
+    linear-gradient(170deg, rgba(14, 14, 14, 0.98), rgba(6, 6, 6, 0.98));
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  text-decoration: none;
+  color: inherit;
 }
 
 .utsav-feature-card__poster-wrap {
@@ -654,8 +656,8 @@ img {
   place-items: center;
   padding: 12px;
   background:
-    radial-gradient(circle at center, rgba(244, 208, 63, 0.16), rgba(8, 8, 8, 0.2) 60%),
-    linear-gradient(140deg, rgba(22, 16, 46, 0.92), rgba(10, 10, 10, 0.95));
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.12), rgba(8, 8, 8, 0.2) 60%),
+    linear-gradient(140deg, rgba(22, 22, 22, 0.92), rgba(10, 10, 10, 0.95));
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -690,25 +692,7 @@ img {
 
 .utsav-feature-card__meta {
   margin-top: auto;
-  margin-bottom: 6px;
-}
-
-.utsav-feature-card__cta {
-  margin-top: 4px;
-  width: 100%;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(244, 208, 63, 0.35);
-  background: linear-gradient(135deg, #6e1a91, #9a3cbf 60%, #f4d03f);
-  color: #fff;
-  font-size: 0.84rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  margin-bottom: 0;
 }
 
 .utsav-event-card.surface-card {
@@ -716,10 +700,10 @@ img {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(244, 208, 63, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   background:
-    radial-gradient(circle at top, rgba(110, 26, 145, 0.24), rgba(8, 8, 8, 0.95) 52%),
-    linear-gradient(170deg, rgba(12, 10, 26, 0.98), rgba(8, 8, 8, 0.98));
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), rgba(8, 8, 8, 0.95) 52%),
+    linear-gradient(170deg, rgba(14, 14, 14, 0.98), rgba(7, 7, 7, 0.98));
 }
 
 .utsav-event-card__poster-wrap {
@@ -729,8 +713,8 @@ img {
   place-items: center;
   padding: 12px;
   background:
-    radial-gradient(circle at center, rgba(244, 208, 63, 0.16), rgba(8, 8, 8, 0.2) 60%),
-    linear-gradient(140deg, rgba(22, 16, 46, 0.92), rgba(10, 10, 10, 0.95));
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.12), rgba(8, 8, 8, 0.2) 60%),
+    linear-gradient(140deg, rgba(22, 22, 22, 0.92), rgba(10, 10, 10, 0.95));
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -751,9 +735,9 @@ img {
   letter-spacing: 0.08em;
   border-radius: 999px;
   padding: 6px 10px;
-  color: #f4d03f;
-  background: rgba(12, 10, 26, 0.75);
-  border: 1px solid rgba(244, 208, 63, 0.35);
+  color: #fff;
+  background: rgba(10, 10, 10, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .utsav-event-card__body {
@@ -807,8 +791,8 @@ img {
   gap: 8px;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(244, 208, 63, 0.35);
-  background: linear-gradient(135deg, #6e1a91, #9a3cbf 58%, #f4d03f);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: linear-gradient(135deg, #1a1a1a, #111, #2a2a2a);
   color: #fff;
   font-size: 0.83rem;
   font-weight: 700;

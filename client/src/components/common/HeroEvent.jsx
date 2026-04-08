@@ -20,12 +20,15 @@ const HeroEvent = ({ event }) => {
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
   const formattedDate = formatEventDate(event.date || event.event_date || event.eventDate);
-  const description = (event.description || '').trim();
-  const shortDescription = description.length > 160 ? `${description.slice(0, 157)}...` : description;
+  const href = event.registration_url || 'https://events.utsavbmsce.in/events';
 
   return (
-    <motion.article
+    <motion.a
       className="utsav-feature-card"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Open ${event.title || 'event'} on official portal`}
       whileHover={reduceMotion || isMobile ? undefined : { y: -8, transition: { type: 'spring', stiffness: 380, damping: 26 } }}
       whileTap={reduceMotion || isMobile ? undefined : { scale: 0.995 }}
       transition={{ duration: isMobile ? 0.16 : 0.25, ease: [0.16, 1, 0.3, 1] }}
@@ -50,7 +53,6 @@ const HeroEvent = ({ event }) => {
         </span>
 
         <h3 className="utsav-feature-card__title">{event.title}</h3>
-        <p className="utsav-feature-card__description">{shortDescription || 'Explore this event on the official Utsav portal.'}</p>
 
         <div className="card-meta utsav-feature-card__meta">
           <span className="inline-stack">
@@ -61,19 +63,13 @@ const HeroEvent = ({ event }) => {
             <MapPin size={14} />
             {event.venue || 'BMSCE Campus'}
           </span>
+          <span className="inline-stack">
+            <ExternalLink size={14} />
+            Official page
+          </span>
         </div>
-
-        <a
-          className="utsav-feature-card__cta"
-          href={event.registration_url || 'https://events.utsavbmsce.in/events'}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`Open ${event.title || 'event'} on official portal`}
-        >
-          Official Page <ExternalLink size={14} />
-        </a>
       </div>
-    </motion.article>
+    </motion.a>
   );
 };
 

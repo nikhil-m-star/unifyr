@@ -1,54 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Brain, Sparkles, Loader2, MapPin, Calendar, ArrowUpRight } from 'lucide-react';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
 
 const RecommendationsView = () => {
-  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [submittedPrompt, setSubmittedPrompt] = useState('');
   const [recommendations, setRecommendations] = useState([]);
   const [error, setError] = useState('');
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const response = await axios.get('/utsav');
-        setEvents(Array.isArray(response.data) ? response.data : []);
-      } catch (eventError) {
-        console.error('Failed to load fallback events:', eventError);
-      }
-    };
-    loadEvents();
-  }, []);
-
-  const buildLocalFallbackRecommendations = (inputPrompt) => {
-    const normalize = (value = '') =>
-      value
-        .toLowerCase()
-        .replace(/[^a-z0-9\\s]/g, ' ')
-        .replace(/\\s+/g, ' ')
-        .trim();
-
-    const tokens = normalize(inputPrompt).split(' ').filter((token) => token.length > 2);
-    if (!tokens.length) return [];
-
-    return [...events]
-      .map((event) => {
-        const haystack = normalize(
-          [event.title, event.category, event.venue, event.description].filter(Boolean).join(' ')
-        );
-        const matched = tokens.filter((token) => haystack.includes(token)).length;
-        const score = matched / tokens.length + (event.registration_open ? 0.2 : 0);
-        return { ...event, ai_score: score, ai_reason: 'Fallback smart match based on your keywords.' };
-      })
-      .filter((event) => event.ai_score > 0.15)
-      .sort((a, b) => b.ai_score - a.ai_score)
-      .slice(0, 8);
-  };
 
   return (
     <div className="market-shell">
@@ -71,8 +33,8 @@ const RecommendationsView = () => {
               setRecommendations(Array.isArray(response.data?.recommendations) ? response.data.recommendations : []);
             } catch (apiError) {
               console.error('Failed to get AI recommendations:', apiError);
-              setRecommendations(buildLocalFallbackRecommendations(prompt));
-              setError('Groq API unavailable right now. Showing smart fallback recommendations.');
+              setRecommendations([]);
+              setError(apiError?.response?.data?.message || 'Failed to fetch AI recommendations.');
             } finally {
               setLoading(false);
             }

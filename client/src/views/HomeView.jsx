@@ -117,15 +117,82 @@ const HomeView = ({ refreshToken = 0 }) => {
     container.scrollBy({ left: direction * amount, behavior: 'smooth' });
   };
 
-  const filteredEvents = featuredEvents;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const hasActiveSearch = normalizedQuery.length > 0;
+
+  const filteredEvents = featuredEvents.filter((event) => {
+    if (!hasActiveSearch) {
+      return true;
+    }
+
+    return [
+      event.title,
+      event.category,
+      event.venue,
+      event.date,
+      event.description,
+    ]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(normalizedQuery));
+  });
 
   const filteredTeams = teams.filter(t => 
-    t.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.team_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    t.event_name?.toLowerCase().includes(normalizedQuery) || 
+    t.description?.toLowerCase().includes(normalizedQuery) ||
+    t.team_name?.toLowerCase().includes(normalizedQuery)
   );
 
   const groupedTeams = groupTeamsByEvent(filteredTeams);
+
+  const featuredEventsSection = (
+    <motion.section
+      className="feed-section top-section"
+      initial={isMobile ? false : { opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: isMobile ? 0.18 : 0.4 }}
+    >
+      <div className="section-head section-head--top">
+        <span className="section-kicker">Featured events</span>
+      </div>
+
+      {filteredEvents.length > 0 ? (
+        <div ref={carouselRef} className="featured-carousel hide-scrollbar">
+          {filteredEvents.map((event, index) => (
+            <motion.div
+              key={event.id}
+              className="featured-carousel__item"
+              initial={isMobile ? false : { opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: isMobile ? 0.16 : 0.3, delay: isMobile ? 0 : index * 0.04 }}
+            >
+              <HeroEvent event={event} />
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          {hasActiveSearch ? 'No featured events match your search.' : 'No featured events available right now.'}
+        </div>
+      )}
+
+      <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+        <button 
+          type="button" 
+          className="btn-primary" 
+          style={{ padding: '14px 28px', fontSize: '1rem', borderRadius: '14px' }}
+          onClick={() => {
+            if (!isSignedIn) {
+              navigate('/auth');
+              return;
+            }
+            setIsCreateTeamOpen(true);
+          }}
+        >
+          Post Recruitment
+        </button>
+      </div>
+    </motion.section>
+  );
 
   if (loading) {
     return (
@@ -154,12 +221,7 @@ const HomeView = ({ refreshToken = 0 }) => {
 
   return (
     <div className="market-shell">
-      <motion.section
-        className="feed-section top-section"
-        initial={isMobile ? false : { opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: isMobile ? 0.18 : 0.4 }}
-      >
+      <div className="feed-section top-section">
         <div className="teammates-filters" style={{ marginBottom: '2.5rem' }}>
           <div className="teammates-search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="teammates-search-icon" style={{ width: '16px', height: '16px' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -173,46 +235,9 @@ const HomeView = ({ refreshToken = 0 }) => {
             />
           </div>
         </div>
+      </div>
 
-        <div className="section-head section-head--top">
-          <span className="section-kicker">Featured events</span>
-        </div>
-
-        {filteredEvents.length > 0 ? (
-          <div ref={carouselRef} className="featured-carousel hide-scrollbar">
-            {filteredEvents.map((event, index) => (
-              <motion.div
-                key={event.id}
-                className="featured-carousel__item"
-                initial={isMobile ? false : { opacity: 0, x: 18 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: isMobile ? 0.16 : 0.3, delay: isMobile ? 0 : index * 0.04 }}
-              >
-                <HeroEvent event={event} />
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">No featured events available right now.</div>
-        )}
-
-        <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center' }}>
-          <button 
-            type="button" 
-            className="btn-primary" 
-            style={{ padding: '14px 28px', fontSize: '1rem', borderRadius: '14px' }}
-            onClick={() => {
-              if (!isSignedIn) {
-                navigate('/auth');
-                return;
-              }
-              setIsCreateTeamOpen(true);
-            }}
-          >
-            Post Recruitment
-          </button>
-        </div>
-      </motion.section>
+      {!hasActiveSearch && featuredEventsSection}
 
       <motion.section
         className="feed-section"
@@ -241,6 +266,8 @@ const HomeView = ({ refreshToken = 0 }) => {
           </div>
         )}
       </motion.section>
+
+      {hasActiveSearch && featuredEventsSection}
 
       <CreateTeamModal
         isOpen={isCreateTeamOpen}

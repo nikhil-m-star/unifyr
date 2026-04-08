@@ -6,4 +6,4 @@ Disallow: /messages
 Disallow: /notifications
 Disallow: /admin
 
-Sitemap: https://unifyr-one.vercel.app/sitemap.xml
+Sitemap: https://campusunifyr.vercel.app/sitemap.xml

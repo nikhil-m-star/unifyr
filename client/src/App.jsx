@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from '@clerk/clerk-react';
 import { Toaster, toast } from 'react-hot-toast';
 import io from 'socket.io-client';
 import Navbar from './components/layout/Navbar';
 import HomeView from './views/HomeView';
 import AuthView from './views/AuthView';
-import RadarView from './views/RadarView';
 import ManageView from './views/ManageView';
 import JoinTeamView from './views/JoinTeamView';
 import MessagesView from './views/MessagesView';
+import ChatSessionView from './views/ChatSessionView';
+import NotificationsView from './views/NotificationsView';
+import RecommendationsView from './views/RecommendationsView';
 import ActiveEventsView from './views/ActiveEventsView';
-import { ChatProvider, useChat } from './context/ChatContext';
-import ChatDrawer from './components/common/ChatDrawer';
-
-const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || 'http://localhost:5000';
+import AdminView from './views/AdminView';
+import { API_ORIGIN } from './api/axios';
+import { NotificationProvider, useNotifications } from './context/NotificationContext';
+import useIsMobile from './hooks/useIsMobile';
 
 const ProtectedRoute = ({ children }) => (
   <>
@@ -27,13 +29,12 @@ const AppContent = () => {
   const [homeRefreshToken, setHomeRefreshToken] = useState(0);
   const [socket, setSocket] = useState(null);
   const { isSignedIn, getToken } = useAuth();
-  const { isOpen, closeChat, activeSessionId, partner, openChat } = useChat();
-
-  // Use refs for variables inside listeners to avoid re-initializing socket on every state change
-  const chatStateRef = useRef({ isOpen, activeSessionId });
-  useEffect(() => {
-    chatStateRef.current = { isOpen, activeSessionId };
-  }, [isOpen, activeSessionId]);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useIsMobile();
+  const { addNotification, markNotificationRead, unreadCount, unreadMessageCount } = useNotifications();
+  const isChatSessionRoute = location.pathname.startsWith('/messages/');
+  const hideNavbarForMobileChat = isMobile && isChatSessionRoute;
 
   useEffect(() => {
     if (!isSignedIn) return undefined;
@@ -47,9 +48,24 @@ const AppContent = () => {
       });
 
       socketInstance.on('notification:acceptance', (data) => {
+        const notificationId = addNotification({
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          sessionId: data.sessionId,
+          timestamp: data.timestamp,
+        });
+
         toast.success(
           (t) => (
-            <div onClick={() => { toast.dismiss(t.id); openChat(data.sessionId); }} style={{ cursor: 'pointer' }}>
+            <div
+              onClick={() => {
+                toast.dismiss(t.id);
+                markNotificationRead(notificationId);
+                navigate(`/messages/${data.sessionId}`);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <div style={{ fontWeight: 700 }}>{data.title}</div>
               <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.message}</div>
             </div>
@@ -59,19 +75,30 @@ const AppContent = () => {
       });
 
       socketInstance.on('notification:message', (data) => {
-        const { isOpen: currentIsOpen, activeSessionId: currentActiveId } = chatStateRef.current;
-        // Only show toast if chat is closed or referring to a different session
-        if (!currentIsOpen || currentActiveId !== data.sessionId) {
-          toast(
-            (t) => (
-              <div onClick={() => { toast.dismiss(t.id); openChat(data.sessionId); }} style={{ cursor: 'pointer' }}>
-                <div style={{ fontWeight: 700 }}>{data.title}</div>
-                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.message}</div>
-              </div>
-            ),
-            { duration: 4000, icon: '💬' }
-          );
-        }
+        const notificationId = addNotification({
+          type: data.type,
+          title: data.title,
+          message: data.message,
+          sessionId: data.sessionId,
+          timestamp: data.timestamp,
+        });
+
+        toast(
+          (t) => (
+            <div
+              onClick={() => {
+                toast.dismiss(t.id);
+                markNotificationRead(notificationId);
+                navigate(`/messages/${data.sessionId}`);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ fontWeight: 700 }}>{data.title}</div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.message}</div>
+            </div>
+          ),
+          { duration: 4000, icon: '💬' }
+        );
       });
 
       setSocket(socketInstance);
@@ -82,24 +109,23 @@ const AppContent = () => {
     return () => {
       socketInstance?.disconnect();
     };
-  }, [isSignedIn, getToken, openChat]);
+  }, [isSignedIn, getToken, navigate, addNotification, markNotificationRead]);
 
   return (
     <div className="app-shell">
-      <Navbar onTeamCreated={() => setHomeRefreshToken((value) => value + 1)} />
-      <main className="app-container">
+      {!hideNavbarForMobileChat && (
+        <Navbar
+          onTeamCreated={() => setHomeRefreshToken((value) => value + 1)}
+          unreadNotificationCount={unreadCount}
+          unreadMessageCount={unreadMessageCount}
+        />
+      )}
+      <main className={`app-container${hideNavbarForMobileChat ? ' app-container--chat-mobile' : ''}`}>
         <Routes>
           <Route path="/" element={<HomeView refreshToken={homeRefreshToken} />} />
           <Route path="/auth/*" element={<AuthView />} />
-          <Route
-            path="/ready"
-            element={
-              <ProtectedRoute>
-                <RadarView globalSocket={socket} />
-              </ProtectedRoute>
-            }
-          />
           <Route path="/events/active" element={<ActiveEventsView />} />
+          <Route path="/recommendations" element={<RecommendationsView />} />
           <Route
             path="/manage"
             element={
@@ -124,16 +150,32 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/messages/:sessionId"
+            element={
+              <ProtectedRoute>
+                <ChatSessionView socket={socket} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminView />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
-
-      <ChatDrawer
-        isOpen={isOpen}
-        onClose={closeChat}
-        sessionId={activeSessionId}
-        partner={partner}
-        socket={socket}
-      />
 
       <Toaster 
         position="bottom-right"
@@ -155,9 +197,9 @@ const AppContent = () => {
 
 const App = () => (
   <BrowserRouter>
-    <ChatProvider>
+    <NotificationProvider>
       <AppContent />
-    </ChatProvider>
+    </NotificationProvider>
   </BrowserRouter>
 );
 

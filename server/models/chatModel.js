@@ -61,6 +61,37 @@ const createMessage = async (sessionId, senderId, content) => {
   return rows[0];
 };
 
+const getMessageById = async (messageId) => {
+  const query = `
+    SELECT id, session_id, sender_id, content, created_at
+    FROM messages
+    WHERE id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(query, [messageId]);
+  return rows[0];
+};
+
+const deleteMessageById = async (messageId) => {
+  const query = `
+    DELETE FROM messages
+    WHERE id = $1
+    RETURNING id, session_id, sender_id
+  `;
+  const { rows } = await pool.query(query, [messageId]);
+  return rows[0];
+};
+
+const deleteChatSessionById = async (sessionId) => {
+  const query = `
+    DELETE FROM chat_sessions
+    WHERE id = $1
+    RETURNING id, user_1_id, user_2_id
+  `;
+  const { rows } = await pool.query(query, [sessionId]);
+  return rows[0];
+};
+
 const getUserChatSessions = async (userId) => {
   const query = `
     SELECT
@@ -108,5 +139,8 @@ module.exports = {
   getChatSessionByUsers,
   getChatSessionMessages,
   createMessage,
+  getMessageById,
+  deleteMessageById,
+  deleteChatSessionById,
   getUserChatSessions,
 };

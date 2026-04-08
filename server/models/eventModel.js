@@ -25,9 +25,38 @@ const deleteEvent = async (id) => {
   return rows[0];
 };
 
+const updateEvent = async (id, updates = {}) => {
+  const allowed = {
+    title: 'title',
+    description: 'description',
+    imageUrl: 'image_url',
+    category: 'category',
+    eventDate: 'event_date',
+  };
+
+  const keys = Object.keys(updates).filter((key) => Object.prototype.hasOwnProperty.call(allowed, key));
+  if (keys.length === 0) {
+    return getEventById(id);
+  }
+
+  const assignments = keys.map((key, index) => `${allowed[key]} = $${index + 1}`);
+  const values = keys.map((key) => updates[key]);
+  values.push(id);
+
+  const query = `
+    UPDATE featured_events
+    SET ${assignments.join(', ')}
+    WHERE id = $${values.length}
+    RETURNING *
+  `;
+  const { rows } = await pool.query(query, values);
+  return rows[0];
+};
+
 module.exports = {
   createEvent,
   getAllEvents,
   getEventById,
-  deleteEvent
+  deleteEvent,
+  updateEvent,
 };

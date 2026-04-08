@@ -10,6 +10,72 @@ import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
 import { groupTeamsByEvent } from '../lib/groupTeams';
 
+const normalizeName = (value = '') =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const toTokenSet = (value = '') =>
+  new Set(
+    normalizeName(value)
+      .split(' ')
+      .filter((token) => token.length > 2)
+  );
+
+const similarityScore = (left, right) => {
+  const a = normalizeName(left);
+  const b = normalizeName(right);
+
+  if (!a || !b) {
+    return 0;
+  }
+
+  if (a === b) {
+    return 1;
+  }
+
+  const includesBonus = a.includes(b) || b.includes(a) ? 0.25 : 0;
+  const startsWithBonus = a.startsWith(b) || b.startsWith(a) ? 0.15 : 0;
+
+  const leftTokens = toTokenSet(a);
+  const rightTokens = toTokenSet(b);
+  if (leftTokens.size === 0 || rightTokens.size === 0) {
+    return Math.min(0.9, includesBonus + startsWithBonus);
+  }
+
+  let intersection = 0;
+  leftTokens.forEach((token) => {
+    if (rightTokens.has(token)) {
+      intersection += 1;
+    }
+  });
+
+  const tokenScore = intersection / Math.max(leftTokens.size, rightTokens.size);
+  return Math.min(1, tokenScore + includesBonus + startsWithBonus);
+};
+
+const getBestEventMatch = (team, events) => {
+  const teamEventName = team.event_name || team.eventName || '';
+  if (!teamEventName) {
+    return null;
+  }
+
+  let bestMatch = null;
+  let bestScore = 0;
+
+  events.forEach((event) => {
+    const score = similarityScore(teamEventName, event.title);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = event;
+    }
+  });
+
+  return bestScore >= 0.45 ? bestMatch : null;
+};
+
 const MiniEventGroup = ({ group, isMobile }) => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -22,7 +88,7 @@ const MiniEventGroup = ({ group, isMobile }) => {
       >
         <div className="event-group__info">
           <span className="event-group__dot" />
-          <h3 className="event-group__name" style={{ fontSize: '1rem' }}>{group.eventName}</h3>
+          <h3 className="event-group__name" style={{ fontSize: '1.2rem' }}>{group.eventName}</h3>
           <span className="event-group__count">{group.teams.length}</span>
         </div>
         <span className="event-group__toggle">
@@ -60,6 +126,7 @@ const MiniEventGroup = ({ group, isMobile }) => {
 
 const HomeView = ({ refreshToken = 0 }) => {
   const [featuredEvents, setFeaturedEvents] = useState([]);
+  const [allUtsavEvents, setAllUtsavEvents] = useState([]);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +144,7 @@ const HomeView = ({ refreshToken = 0 }) => {
         const [utsavRes, teamsRes] = await Promise.all([axios.get('/utsav'), axios.get('/teams')]);
         const utsavEvents = Array.isArray(utsavRes.data) ? utsavRes.data : [];
         const sorted = [...utsavEvents].sort((a, b) => Number(b.registration_open) - Number(a.registration_open));
+        setAllUtsavEvents(utsavEvents);
         setFeaturedEvents(sorted.slice(0, 14));
         setTeams(teamsRes.data);
       } catch (error) {
@@ -120,6 +188,18 @@ const HomeView = ({ refreshToken = 0 }) => {
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const hasActiveSearch = normalizedQuery.length > 0;
 
+  const teamsWithMatchedEvents = teams.map((team) => {
+    const matchedEvent = getBestEventMatch(team, allUtsavEvents);
+    const officialEventName = matchedEvent?.title || team.event_name || team.eventName || '';
+    return {
+      ...team,
+      original_event_name: team.event_name || team.eventName || '',
+      event_name: officialEventName,
+      matched_event_image_url: matchedEvent?.image_url || null,
+      matched_event_title: matchedEvent?.title || null,
+    };
+  });
+
   const filteredEvents = featuredEvents.filter((event) => {
     if (!hasActiveSearch) {
       return true;
@@ -136,8 +216,9 @@ const HomeView = ({ refreshToken = 0 }) => {
       .some((value) => value.toLowerCase().includes(normalizedQuery));
   });
 
-  const filteredTeams = teams.filter(t => 
+  const filteredTeams = teamsWithMatchedEvents.filter(t => 
     t.event_name?.toLowerCase().includes(normalizedQuery) || 
+    t.original_event_name?.toLowerCase().includes(normalizedQuery) || 
     t.description?.toLowerCase().includes(normalizedQuery) ||
     t.team_name?.toLowerCase().includes(normalizedQuery)
   );
@@ -222,7 +303,7 @@ const HomeView = ({ refreshToken = 0 }) => {
   return (
     <div className="market-shell">
       <div className="feed-section top-section">
-        <div className="teammates-filters" style={{ marginBottom: '2.5rem' }}>
+        <div className="teammates-filters teammates-filters--home">
           <div className="teammates-search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="teammates-search-icon" style={{ width: '16px', height: '16px' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input

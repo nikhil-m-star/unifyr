@@ -2,6 +2,12 @@ const { clerkClient } = require('@clerk/express');
 const userModel = require('../models/userModel');
 
 const getFallbackEmail = (clerkId) => `${clerkId}@users.unifyr.local`;
+const adminEmails = (process.env.ADMIN_EMAILS || 'nikhilm.cs24@bmsce.ac.in')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+
+const isAdminEmail = (email = '') => adminEmails.includes(email.trim().toLowerCase());
 
 const getProfileFromClaims = (claims = {}) => {
   const fullName = claims.fullName || claims.full_name || claims.name;
@@ -36,20 +42,20 @@ const syncUserFromClerk = async (clerkId, claims = {}) => {
   }
 
   const existingUser = await userModel.getUserByClerkId(clerkId);
-  if (existingUser) {
-    return existingUser;
-  }
 
   let profile = getProfileFromClaims(claims);
+  const shouldHydrateFromClerk = !existingUser || !profile.email || !profile.name || !profile.profilePic;
 
-  try {
-    const clerkUser = await clerkClient.users.getUser(clerkId);
-    profile = {
-      ...profile,
-      ...getProfileFromClerkUser(clerkUser),
-    };
-  } catch (error) {
-    console.warn(`Unable to hydrate Clerk profile for ${clerkId}: ${error.message}`);
+  if (shouldHydrateFromClerk) {
+    try {
+      const clerkUser = await clerkClient.users.getUser(clerkId);
+      profile = {
+        ...profile,
+        ...getProfileFromClerkUser(clerkUser),
+      };
+    } catch (error) {
+      console.warn(`Unable to hydrate Clerk profile for ${clerkId}: ${error.message}`);
+    }
   }
 
   const normalizedEmail = profile.email || getFallbackEmail(clerkId);
@@ -61,7 +67,15 @@ const syncUserFromClerk = async (clerkId, claims = {}) => {
     throw error;
   }
 
-  return userModel.createUser(clerkId, profile.name || 'User', normalizedEmail, profile.profilePic || '');
+  const role = isAdminEmail(normalizedEmail) ? 'admin' : (existingUser?.role || 'student');
+
+  return userModel.createUser(
+    clerkId,
+    profile.name || existingUser?.name || 'User',
+    normalizedEmail,
+    profile.profilePic || existingUser?.profile_pic || '',
+    role
+  );
 };
 
 module.exports = {

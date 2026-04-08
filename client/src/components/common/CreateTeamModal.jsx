@@ -33,7 +33,7 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
   useEffect(() => {
     if (!isOpen) {
       setStatus(null);
-      setForm({ eventName: '', teamName: '', description: '', lookingFor: '' });
+      setForm({ eventName: '', teamName: '', lookingFor: '' });
     }
   }, [isOpen]);
 
@@ -49,7 +49,6 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
         {
           eventName: form.eventName.trim(),
           teamName: form.teamName.trim(),
-          description: form.description.trim(),
           lookingFor: form.lookingFor.trim(),
         },
         {
@@ -119,10 +118,6 @@ const CreateTeamModal = ({ isOpen, onClose, onCreated }) => {
                   <input id="lookingFor" name="lookingFor" className="app-input" value={form.lookingFor} onChange={handleChange} placeholder="e.g. Frontend Dev, UI/UX Designer" />
                 </div>
 
-                <div className="field">
-                  <label htmlFor="description">Project Description</label>
-                  <textarea id="description" name="description" className="app-input" rows={4} value={form.description} onChange={handleChange} placeholder="Tell us what you're building..." style={{ resize: 'vertical' }} />
-                </div>
 
                 <motion.button
                   type="submit"

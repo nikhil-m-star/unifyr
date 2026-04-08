@@ -10,6 +10,23 @@ const getActiveUsers = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  try {
+    if (!req.dbUser) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    res.status(200).json({
+      user: req.dbUser,
+      isAdmin: req.dbUser.role === 'admin',
+    });
+  } catch (error) {
+    console.error('Failed to fetch current user:', error);
+    res.status(500).json({ message: 'Failed to fetch current user' });
+  }
+};
+
 module.exports = {
   getActiveUsers,
+  getMe,
 };

@@ -1,11 +1,14 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const shouldUseSsl = process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production';
+const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: shouldUseSsl
+    ? { rejectUnauthorized }
+    : false,
 });
 
 pool.on('error', (err) => {

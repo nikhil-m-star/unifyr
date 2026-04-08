@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Calendar, ExternalLink, MapPin, Tag } from 'lucide-react';
+import { Calendar, ExternalLink, MapPin } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
 
 const formatEventDate = (dateText) => {
@@ -47,13 +47,6 @@ const HeroEvent = ({ event }) => {
       </div>
 
       <div className="utsav-feature-card__content">
-        <span className="card-pill card-pill--light">
-          <Tag size={12} />
-          {event.category || 'Featured'}
-        </span>
-
-        <h3 className="utsav-feature-card__title">{event.title}</h3>
-
         <div className="card-meta utsav-feature-card__meta">
           <span className="inline-stack">
             <Calendar size={14} />

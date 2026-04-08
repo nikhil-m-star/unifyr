@@ -2,18 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Trash2, Edit, AlertCircle, Loader2, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
-import { useChat } from '../context/ChatContext';
 import useIsMobile from '../hooks/useIsMobile';
 
 const ChatButton = ({ sessionId, partner }) => {
-  const { openChat } = useChat();
+  const navigate = useNavigate();
   return (
     <button
       type="button"
       className="btn-primary manage-chat-btn"
-      onClick={() => openChat(sessionId, partner)}
+      onClick={() => navigate(`/messages/${sessionId}`, { state: { partner } })}
     >
       <MessageSquare size={14} /> Message Teammate
     </button>
@@ -24,7 +24,6 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     teamName: team.team_name || team.teamName || '',
-    description: team.description || '',
     lookingFor: team.looking_for || team.lookingFor || '',
   });
 
@@ -51,10 +50,6 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
             <label htmlFor={`edit-lookingFor-${team.id}`}>Looking for</label>
             <input id={`edit-lookingFor-${team.id}`} name="lookingFor" className="glass-input" value={editForm.lookingFor} onChange={handleEditChange} />
           </div>
-          <div className="field">
-            <label htmlFor={`edit-description-${team.id}`}>Description</label>
-            <textarea id={`edit-description-${team.id}`} name="description" className="glass-input" rows={3} value={editForm.description} onChange={handleEditChange} />
-          </div>
           <div className="manage-card__actions">
             <button type="submit" className="btn-primary" disabled={busyId?.includes(team.id)}>
               {busyId?.includes(team.id) ? 'Saving...' : 'Save Changes'}
@@ -78,7 +73,6 @@ const ManageTeamCard = ({ team, onAction, busyId }) => {
             </span>
           </div>
 
-          <p className="manage-card__desc">{team.description || 'No description provided.'}</p>
 
           {team.looking_for && (
             <div className="manage-card__seeking">

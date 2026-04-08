@@ -19,6 +19,17 @@ const TeamPost = ({ team }) => {
       transition={{ duration: 0.2 }}
       style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
     >
+      {team.matched_event_image_url && (
+        <div className="team-card__event-poster-wrap">
+          <img
+            className="team-card__event-poster"
+            src={team.matched_event_image_url}
+            alt={team.matched_event_title || 'Matched event poster'}
+            loading="lazy"
+          />
+        </div>
+      )}
+
       <div className="team-card__top">
         <div style={{ flex: 1 }}>
           <div className="team-card__title" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
@@ -27,12 +38,6 @@ const TeamPost = ({ team }) => {
         </div>
       </div>
 
-      <p className="team-card__body" style={{ 
-        fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem',
-        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-      }}>
-        {team.description}
-      </p>
 
       <div style={{ 
         padding: '10px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: '12px',

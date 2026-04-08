@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { MessageSquare, Clock, ChevronRight, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MessageSquare, Clock, Loader2, Trash2 } from 'lucide-react';
 import axios from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
-import { useChat } from '../context/ChatContext';
 import useIsMobile from '../hooks/useIsMobile';
 
 const MessagesView = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingSessionId, setDeletingSessionId] = useState(null);
   const { getToken } = useAuth();
-  const { openChat } = useChat();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   const fetchSessions = async () => {
@@ -34,6 +34,26 @@ const MessagesView = () => {
     const interval = setInterval(fetchSessions, 30000);
     return () => clearInterval(interval);
   }, [getToken]);
+
+  const handleDeleteSession = async (event, sessionId) => {
+    event.stopPropagation();
+    const shouldDelete = window.confirm('Delete this chat and all its messages?');
+    if (!shouldDelete) return;
+
+    try {
+      setDeletingSessionId(sessionId);
+      const token = await getToken();
+      await axios.delete(`/chat/${sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await fetchSessions();
+    } catch (error) {
+      console.error('Failed to delete chat session:', error);
+      alert('Could not delete chat right now. Please try again.');
+    } finally {
+      setDeletingSessionId(null);
+    }
+  };
 
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
@@ -77,14 +97,38 @@ const MessagesView = () => {
               initial={isMobile ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
-              onClick={() => openChat(session.id, { 
-                id: session.partner_id, 
-                name: session.partner_name, 
-                profile_pic: session.partner_profile_pic,
-                role: session.partner_role
-              })}
             >
-              <GlassCard className="message-item" style={{ cursor: 'pointer' }}>
+              <GlassCard
+                className="message-item"
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate(`/messages/${session.id}`, {
+                  state: {
+                    partner: {
+                      id: session.partner_id,
+                      name: session.partner_name,
+                      profile_pic: session.partner_profile_pic,
+                      role: session.partner_role,
+                    },
+                  },
+                })}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    navigate(`/messages/${session.id}`, {
+                      state: {
+                        partner: {
+                          id: session.partner_id,
+                          name: session.partner_name,
+                          profile_pic: session.partner_profile_pic,
+                          role: session.partner_role,
+                        },
+                      },
+                    });
+                  }
+                }}
+              >
                 <div className="msg-avatar-wrap">
                   <div className="msg-avatar">
                     {session.partner_profile_pic ? (
@@ -104,19 +148,27 @@ const MessagesView = () => {
                       {formatTime(session.last_message_at || session.created_at)}
                     </span>
                   </div>
-                  
-                  <div className="msg-topic">{session.topic}</div>
 
-                  <p className="msg-preview" style={{ 
+                  <div className="msg-topic">{session.topic || 'Chat'}</div>
+
+                  <p className="msg-preview" style={{
                     fontWeight: session.last_message_content ? 500 : 400,
-                    fontStyle: session.last_message_content ? 'normal' : 'italic'
+                    fontStyle: session.last_message_content ? 'normal' : 'italic',
                   }}>
                     {session.last_message_content || 'No messages yet — start the conversation!'}
                   </p>
                 </div>
 
-                <div className="msg-chevron">
-                  <ChevronRight size={18} />
+                <div className="msg-thread-item__actions">
+                  <button
+                    type="button"
+                    className="msg-delete-btn"
+                    onClick={(event) => handleDeleteSession(event, session.id)}
+                    disabled={deletingSessionId === session.id}
+                    aria-label="Delete chat"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </GlassCard>
             </motion.div>
@@ -129,11 +181,10 @@ const MessagesView = () => {
           </div>
           <h2>No Conversations Yet</h2>
           <p>
-            Start discovering teammates or finding random matches to begin your first conversation.
+            Start discovering teammates to begin your first conversation.
           </p>
           <div className="messages-empty__actions">
             <Link to="/" className="btn-primary">Find Events</Link>
-            <Link to="/ready" className="btn-secondary">Random Match</Link>
           </div>
         </div>
       )}

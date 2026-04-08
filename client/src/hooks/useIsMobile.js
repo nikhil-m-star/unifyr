@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const MOBILE_QUERY = '(max-width: 720px)';
+const MOBILE_QUERY = '(max-width: 900px)';
 
 const getMatches = () => {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {

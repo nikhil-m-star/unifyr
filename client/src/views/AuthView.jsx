@@ -20,7 +20,7 @@ const AuthView = () => {
           <span className="section-kicker">{isSignUp ? 'Create account' : 'Welcome back'}</span>
           <h1 className="auth-simple__title">Campus Unifyr</h1>
           <p className="auth-simple__copy">
-            {isSignUp ? 'Create your account to start matching with teams.' : 'Sign in to continue to events, teams, and radar.'}
+            {isSignUp ? 'Create your account to connect with teams.' : 'Sign in to continue to events and teams.'}
           </p>
         </div>
 

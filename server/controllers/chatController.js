@@ -31,7 +31,61 @@ const getUserSessions = async (req, res) => {
   }
 };
 
+const deleteSession = async (req, res) => {
+  try {
+    const sessionId = Number(req.params.sessionId);
+    const session = await chatModel.getChatSessionById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: 'Chat session not found' });
+    }
+
+    if (![session.user_1_id, session.user_2_id].includes(req.dbUser.id)) {
+      return res.status(403).json({ message: 'You are not part of this chat session' });
+    }
+
+    await chatModel.deleteChatSessionById(sessionId);
+    return res.status(200).json({ message: 'Chat deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete chat session:', error);
+    return res.status(500).json({ message: 'Failed to delete chat session' });
+  }
+};
+
+const deleteMessage = async (req, res) => {
+  try {
+    const sessionId = Number(req.params.sessionId);
+    const messageId = Number(req.params.messageId);
+    const session = await chatModel.getChatSessionById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: 'Chat session not found' });
+    }
+
+    if (![session.user_1_id, session.user_2_id].includes(req.dbUser.id)) {
+      return res.status(403).json({ message: 'You are not part of this chat session' });
+    }
+
+    const message = await chatModel.getMessageById(messageId);
+    if (!message || message.session_id !== sessionId) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    if (message.sender_id !== req.dbUser.id) {
+      return res.status(403).json({ message: 'You can delete only your own messages' });
+    }
+
+    await chatModel.deleteMessageById(messageId);
+    return res.status(200).json({ message: 'Message deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete message:', error);
+    return res.status(500).json({ message: 'Failed to delete message' });
+  }
+};
+
 module.exports = {
   getSessionMessages,
   getUserSessions,
+  deleteSession,
+  deleteMessage,
 };

@@ -10,18 +10,38 @@ const { Server } = require('socket.io');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
+const rateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const rateLimitMax = Number(process.env.RATE_LIMIT_MAX || (isProduction ? 600 : 5000));
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
 
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : null;
+  : (isProduction ? [] : defaultDevOrigins);
+
+if (isProduction && allowedOrigins.length === 0) {
+  throw new Error('CORS_ORIGIN must be set in production.');
+}
+
+// Respect X-Forwarded-For on Railway/reverse proxies so users don't share one IP bucket.
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
 
 const isOriginAllowed = (origin) => {
   if (!origin) {
     return true;
   }
 
-  if (!allowedOrigins || allowedOrigins.length === 0) {
-    return true;
+  if (allowedOrigins.length === 0) {
+    return false;
   }
 
   return allowedOrigins.includes(origin);
@@ -46,12 +66,13 @@ app.use(hpp());
 
 // Global Rate Limiting (in-memory store — no Redis needed)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 200,
+  windowMs: rateLimitWindowMs,
+  limit: rateLimitMax,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  message: { message: 'Too many requests. Please wait a minute and try again.' },
 });
-app.use(limiter);
+app.use('/api', limiter);
 
 // Routes Import
 const eventRoutes = require('./routes/eventRoutes');
@@ -59,6 +80,8 @@ const teamRoutes = require('./routes/teamRoutes');
 const userRoutes = require('./routes/userRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const utsavRoutes = require('./routes/utsavRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const notificationService = require('./services/notificationService');
 
 const server = http.createServer(app);
@@ -76,9 +99,6 @@ const io = new Server(server, {
   }
 });
 
-// Initialize Matchmaking WebSockets
-require('./sockets/matchmakingSocket')(io);
-
 // Initialize Global Notification Service
 notificationService.init(io);
 
@@ -93,6 +113,8 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/utsav', utsavRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

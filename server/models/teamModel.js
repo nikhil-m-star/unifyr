@@ -15,14 +15,18 @@ const getTeamsByEvent = async (eventId) => {
     SELECT
       teams.id,
       teams.event_id,
+      teams.creator_id,
       COALESCE(teams.event_name, featured_events.title) AS event_name,
       teams.team_name,
       teams.description,
       teams.looking_for,
       teams.status,
-      teams.created_at
+      teams.created_at,
+      users.name AS creator_name,
+      users.email AS creator_email
     FROM teams
     LEFT JOIN featured_events ON featured_events.id = teams.event_id
+    LEFT JOIN users ON users.id = teams.creator_id
     WHERE teams.event_id = $1
     ORDER BY teams.created_at DESC
   `;
@@ -32,9 +36,14 @@ const getTeamsByEvent = async (eventId) => {
 
 const getTeamById = async (id) => {
   const query = `
-    SELECT teams.*, COALESCE(teams.event_name, featured_events.title) AS event_name
+    SELECT
+      teams.*,
+      COALESCE(teams.event_name, featured_events.title) AS event_name,
+      users.name AS creator_name,
+      users.email AS creator_email
     FROM teams
     LEFT JOIN featured_events ON featured_events.id = teams.event_id
+    LEFT JOIN users ON users.id = teams.creator_id
     WHERE teams.id = $1
   `;
   const { rows } = await pool.query(query, [id]);
@@ -90,9 +99,14 @@ const adminUpdateTeam = async (id, updates = {}) => {
 
 const getTeamsByCreator = async (creatorId) => {
   const query = `
-    SELECT teams.*, COALESCE(teams.event_name, featured_events.title) AS event_name
+    SELECT
+      teams.*,
+      COALESCE(teams.event_name, featured_events.title) AS event_name,
+      users.name AS creator_name,
+      users.email AS creator_email
     FROM teams
     LEFT JOIN featured_events ON featured_events.id = teams.event_id
+    LEFT JOIN users ON users.id = teams.creator_id
     WHERE teams.creator_id = $1
     ORDER BY teams.created_at DESC
   `;
@@ -105,14 +119,18 @@ const getAllTeams = async () => {
     SELECT
       teams.id,
       teams.event_id,
+      teams.creator_id,
       COALESCE(teams.event_name, featured_events.title) AS event_name,
       teams.team_name,
       teams.description,
       teams.looking_for,
       teams.status,
-      teams.created_at
+      teams.created_at,
+      users.name AS creator_name,
+      users.email AS creator_email
     FROM teams
     LEFT JOIN featured_events ON featured_events.id = teams.event_id
+    LEFT JOIN users ON users.id = teams.creator_id
     ORDER BY teams.created_at DESC
   `;
   const { rows } = await pool.query(query);

@@ -51,6 +51,28 @@ const TeamPost = ({ team }) => {
         </div>
       </div>
 
+      <div
+        style={{
+          marginBottom: '1rem',
+          padding: '10px 12px',
+          borderRadius: '12px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.02)',
+        }}
+      >
+        <div style={{ fontSize: '0.66rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.04em' }}>
+          Posted by
+        </div>
+        <div style={{ fontSize: '0.84rem', color: 'var(--text-primary)', fontWeight: 650 }}>
+          {team.creator_name || 'Campus Unifyr User'}
+        </div>
+        {team.creator_email && (
+          <div style={{ fontSize: '0.77rem', color: 'var(--text-secondary)', marginTop: '2px', wordBreak: 'break-all' }}>
+            {team.creator_email}
+          </div>
+        )}
+      </div>
+
       <div className="team-card__footer">
         <div style={{ flex: 1 }} />
         <button

@@ -1464,14 +1464,14 @@ img {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-    left: 10px;
-    right: 10px;
+    gap: 4px;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
     bottom: calc(10px + env(safe-area-inset-bottom));
     width: auto;
-    max-width: 460px;
+    max-width: 520px;
     margin: 0 auto;
-    padding: 7px;
+    padding: 7px 8px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.16);
     background: rgba(8, 8, 8, 0.95);
@@ -1486,12 +1486,14 @@ img {
     align-items: center;
     justify-content: center;
     width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  color: var(--text-muted);
-  border: 1px solid transparent;
+    min-width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    color: var(--text-muted);
+    border: 1px solid transparent;
     transition: all var(--transition-base);
     position: relative;
+    flex: 1 1 0;
   }
 
   .mobile-pill-nav__item svg {
@@ -1559,11 +1561,11 @@ img {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    left: 12px;
-    right: 12px;
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
     bottom: calc(74px + env(safe-area-inset-bottom));
     width: auto;
-    max-width: 320px;
+    max-width: 360px;
     margin: 0 auto;
     padding: 12px;
     border-radius: 18px;
@@ -2774,6 +2776,7 @@ img {
 
   .mobile-pill-nav__item {
     width: 40px;
+    min-width: 40px;
     height: 40px;
   }
 

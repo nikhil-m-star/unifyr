@@ -104,12 +104,15 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   const baseNavItems = [
     { to: '/', label: 'Discover', icon: Compass },
     { to: '/events/active', label: 'Events', icon: Ticket },
-    { to: '/recommendations', label: 'AI', icon: Sparkles },
   ];
 
-  const signedInNavItems = [
+  const signedInPrimaryNavItems = [
     { to: '/messages', label: 'Messages', icon: MessageSquare },
     { to: '/notifications', label: 'Notifications', icon: Bell },
+  ];
+
+  const signedInOverflowNavItems = [
+    { to: '/recommendations', label: 'AI', icon: Sparkles },
     { to: '/manage', label: 'Manage', icon: Edit },
   ];
 
@@ -117,18 +120,23 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
     { to: '/admin', label: 'Admin', icon: Shield },
   ];
 
-  const signedOutNavItems = [
+  const signedOutPrimaryNavItems = [
+    { to: '/recommendations', label: 'AI', icon: Sparkles },
     { to: '/auth', label: 'Sign In', icon: LogIn },
   ];
 
-  const mobileNavItems = [
+  const mobilePrimaryItems = [
     ...baseNavItems,
-    ...(isSignedIn ? signedInNavItems : signedOutNavItems),
+    ...(isSignedIn ? signedInPrimaryNavItems : signedOutPrimaryNavItems),
+  ];
+
+  const mobileOverflowItems = [
+    ...(isSignedIn ? signedInOverflowNavItems : []),
     ...(isSignedIn && isAdmin ? adminNavItems : []),
   ];
 
-  const visibleMobileItems = mobileNavItems.slice(0, 4);
-  const overflowMobileItems = mobileNavItems.slice(4);
+  const visibleMobileItems = mobilePrimaryItems.slice(0, 4);
+  const overflowMobileItems = mobileOverflowItems;
   const isOverflowActive = overflowMobileItems.some(({ to }) => location.pathname === to || location.pathname.startsWith(`${to}/`));
   const hasMoreOptions = overflowMobileItems.length > 0 || isSignedIn;
 
@@ -180,11 +188,13 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
         </div>
       </motion.nav>
 
-      <div className="mobile-page-logo">
-        <NavLink to="/" className="mobile-page-logo__brand" onClick={() => setMobileMoreOpen(false)}>
-          <span className="brand-title">Campus Unifyr</span>
-        </NavLink>
-      </div>
+      {location.pathname === '/' && (
+        <div className="mobile-page-logo">
+          <NavLink to="/" className="mobile-page-logo__brand" onClick={() => setMobileMoreOpen(false)}>
+            <span className="brand-title">Campus Unifyr</span>
+          </NavLink>
+        </div>
+      )}
 
       <AnimatePresence>
         <motion.nav

@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /auth
+Disallow: /manage
+Disallow: /messages
+Disallow: /notifications
+Disallow: /admin
 
-Sitemap: https://unifyr-production.up.railway.app/sitemap.xml
+Sitemap: https://unifyr-one.vercel.app/sitemap.xml

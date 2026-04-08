@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import HeroEvent from '../components/common/HeroEvent';
 import TeamPost from '../components/common/TeamPost';
+import CreateTeamModal from '../components/common/CreateTeamModal';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
 import { groupTeamsByEvent } from '../lib/groupTeams';
@@ -60,6 +61,7 @@ const HomeView = ({ refreshToken = 0 }) => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const carouselRef = useRef(null);
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
@@ -81,6 +83,25 @@ const HomeView = ({ refreshToken = 0 }) => {
     fetchHomeData();
   }, [refreshToken]);
 
+  useEffect(() => {
+    if (events.length <= 1) return undefined;
+    const interval = setInterval(() => {
+      const container = carouselRef.current;
+      if (!container) return;
+      
+      const firstCard = container.querySelector('.featured-carousel__item');
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : container.clientWidth * 0.82;
+      const amount = Math.max(cardWidth + 24, 260);
+      
+      if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        container.scrollBy({ left: amount, behavior: 'smooth' });
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [events]);
+
   const scrollCarousel = (direction) => {
     const container = carouselRef.current;
     if (!container) return;
@@ -90,10 +111,7 @@ const HomeView = ({ refreshToken = 0 }) => {
     container.scrollBy({ left: direction * amount, behavior: 'smooth' });
   };
 
-  const filteredEvents = events.filter(e => 
-    e.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    e.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEvents = events;
 
   const filteredTeams = teams.filter(t => 
     t.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -152,31 +170,6 @@ const HomeView = ({ refreshToken = 0 }) => {
 
         <div className="section-head section-head--top">
           <span className="section-kicker">Featured events</span>
-
-          {filteredEvents.length > 1 && (
-            <div className="carousel-controls">
-              <motion.button
-                type="button"
-                className="carousel-button"
-                onClick={() => scrollCarousel(-1)}
-                aria-label="Scroll left"
-                whileHover={reduceMotion ? undefined : { scale: 1.08, rotate: -4 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-              >
-                <ArrowLeft size={18} />
-              </motion.button>
-              <motion.button
-                type="button"
-                className="carousel-button"
-                onClick={() => scrollCarousel(1)}
-                aria-label="Scroll right"
-                whileHover={reduceMotion ? undefined : { scale: 1.08, rotate: 4 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.92 }}
-              >
-                <ArrowRight size={18} />
-              </motion.button>
-            </div>
-          )}
         </div>
 
         {filteredEvents.length > 0 ? (
@@ -194,8 +187,27 @@ const HomeView = ({ refreshToken = 0 }) => {
             ))}
           </div>
         ) : (
-          <div className="empty-state">No featured events match your search.</div>
+          <div className="empty-state">No featured events available right now.</div>
         )}
+
+        <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+          <button 
+            type="button" 
+            className="btn-primary" 
+            style={{ padding: '14px 28px', fontSize: '1rem', borderRadius: '14px' }}
+            onClick={() => setIsCreateTeamOpen(true)}
+          >
+            Post Recruitment
+          </button>
+        </div>
+
+        <CreateTeamModal
+          isOpen={isCreateTeamOpen}
+          onClose={() => setIsCreateTeamOpen(false)}
+          onCreated={() => {
+            // No-op for now as listing update happens via websocket or interval usually
+          }}
+        />
       </motion.section>
 
       <motion.section

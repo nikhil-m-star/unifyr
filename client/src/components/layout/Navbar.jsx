@@ -14,10 +14,6 @@ const NavItems = ({ onClose, isMobile = false }) => (
       <Compass size={18} />
       Discover
     </NavLink>
-    <NavLink to="/teammates" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
-      <Users size={18} />
-      Teammates
-    </NavLink>
     <SignedIn>
       <NavLink to="/messages" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <MessageSquare size={18} />

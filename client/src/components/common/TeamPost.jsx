@@ -21,20 +21,10 @@ const TeamPost = ({ team }) => {
     >
       <div className="team-card__top">
         <div style={{ flex: 1 }}>
-          <div className="team-card__title" style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+          <div className="team-card__title" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
             {team.team_name || team.teamName}
           </div>
         </div>
-
-        <span className="chip" style={{ 
-          background: 'rgba(255,255,255,0.06)', 
-          color: 'var(--text-secondary)',
-          padding: '4px 10px',
-          fontSize: '0.72rem',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}>
-          Recruiting
-        </span>
       </div>
 
       <p className="team-card__body" style={{ 
@@ -57,10 +47,7 @@ const TeamPost = ({ team }) => {
       </div>
 
       <div className="team-card__footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-          <Users size={13} />
-          <span>Active now</span>
-        </div>
+        <div style={{ flex: 1 }} />
         <button
           type="button"
           className="btn-primary"

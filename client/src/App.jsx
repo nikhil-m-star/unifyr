@@ -7,7 +7,6 @@ import Navbar from './components/layout/Navbar';
 import HomeView from './views/HomeView';
 import AuthView from './views/AuthView';
 import RadarView from './views/RadarView';
-import TeammatesView from './views/TeammatesView';
 import ManageView from './views/ManageView';
 import JoinTeamView from './views/JoinTeamView';
 import MessagesView from './views/MessagesView';
@@ -99,7 +98,6 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/teammates" element={<TeammatesView />} />
           <Route
             path="/manage"
             element={

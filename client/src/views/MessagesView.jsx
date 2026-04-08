@@ -66,11 +66,7 @@ const MessagesView = () => {
         animate={{ opacity: 1, y: 0 }}
         className="messages-header"
       >
-        <span className="section-kicker">Communication</span>
         <h1 className="page-title">Messages</h1>
-        <p className="messages-subtitle">
-          Coordinate with your matched partners and teammate recruits.
-        </p>
       </motion.div>
 
       {sessions.length > 0 ? (
@@ -136,7 +132,7 @@ const MessagesView = () => {
             Start discovering teammates or finding random matches to begin your first conversation.
           </p>
           <div className="messages-empty__actions">
-            <Link to="/teammates" className="btn-primary">Find Teammates</Link>
+            <Link to="/" className="btn-primary">Find Events</Link>
             <Link to="/ready" className="btn-secondary">Random Match</Link>
           </div>
         </div>

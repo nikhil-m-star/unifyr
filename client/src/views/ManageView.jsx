@@ -223,11 +223,7 @@ const ManageView = () => {
         animate={{ opacity: 1, y: 0 }}
         className="messages-header"
       >
-        <span className="section-kicker">Recruitment Hub</span>
         <h1 className="page-title">Manage Your Posts</h1>
-        <p className="messages-subtitle">
-          Control your teammate listings and respond to incoming pitches.
-        </p>
       </motion.div>
 
       <AnimatePresence>

@@ -122,22 +122,10 @@ const RadarView = ({ globalSocket }) => {
               </form>
 
               <div style={{ marginTop: '2rem', textAlign: 'left' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <div className="section-kicker">Active now</div>
-                  <span className="text-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span className="text-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                     {activeUsers.length} online
                   </span>
-                </div>
-
-                <div style={{
-                  padding: '0.9rem 1rem', borderRadius: '14px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5,
-                }}>
-                  {activeUsers.length > 0
-                    ? `${activeUsers.length} people are online and available to match right now.`
-                    : 'No one is active right now. Check back later — new people join frequently.'}
                 </div>
               </div>
             </GlassCard>

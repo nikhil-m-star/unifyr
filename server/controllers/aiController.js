@@ -1,6 +1,7 @@
 const { fetchUtsavEvents } = require('../services/utsavService');
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MAX_AI_EVENTS = 32;
 
 const toCompactEvent = (event) => ({
   id: event.id,
@@ -9,8 +10,34 @@ const toCompactEvent = (event) => ({
   venue: event.venue,
   date: event.date,
   registration_open: Boolean(event.registration_open),
-  description: (event.description || '').slice(0, 180),
+  description: (event.description || '').slice(0, 90),
 });
+
+const normalize = (value = '') =>
+  String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const promptTokens = (prompt = '') => normalize(prompt).split(' ').filter((token) => token.length > 2);
+
+const scoreEventForPrompt = (event, tokens) => {
+  if (!tokens.length) return event.registration_open ? 1 : 0;
+  const haystack = normalize([event.title, event.category, event.venue, event.description].filter(Boolean).join(' '));
+  const matched = tokens.filter((token) => haystack.includes(token)).length;
+  return matched + (event.registration_open ? 0.35 : 0);
+};
+
+const selectCandidateEvents = (events, prompt) => {
+  const tokens = promptTokens(prompt);
+
+  return [...events]
+    .map((event) => ({ event, score: scoreEventForPrompt(event, tokens) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, MAX_AI_EVENTS)
+    .map((entry) => entry.event);
+};
 
 const extractJsonPayload = (content = '') => {
   const trimmed = String(content).trim();
@@ -58,7 +85,8 @@ const recommendEvents = async (req, res) => {
 
     const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
     const events = await fetchUtsavEvents();
-    const compactEvents = events.slice(0, 120).map(toCompactEvent);
+    const candidateEvents = selectCandidateEvents(events, prompt);
+    const compactEvents = candidateEvents.map(toCompactEvent);
 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
@@ -69,7 +97,7 @@ const recommendEvents = async (req, res) => {
       body: JSON.stringify({
         model,
         temperature: 0.2,
-        max_tokens: 900,
+        max_tokens: 500,
         messages: [
           {
             role: 'system',
@@ -90,7 +118,11 @@ const recommendEvents = async (req, res) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Groq API error:', response.status, errorText);
-      return res.status(502).json({ message: 'Failed to fetch AI recommendations.' });
+      return res.status(502).json({
+        message: response.status === 413 || response.status === 429
+          ? 'AI is temporarily rate-limited. Please try again in a few seconds.'
+          : 'Failed to fetch AI recommendations.',
+      });
     }
 
     const payload = await response.json();
@@ -120,4 +152,3 @@ const recommendEvents = async (req, res) => {
 };
 
 module.exports = { recommendEvents };
-

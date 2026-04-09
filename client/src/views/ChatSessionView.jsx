@@ -57,6 +57,12 @@ const ChatSessionView = ({ socket }) => {
     socket?.on('connect', onConnect);
     socket?.on('disconnect', onDisconnect);
     
+    // Auto-rejoin on connect
+    if (socket?.connected && sessionId) {
+      console.log('[Chat] Socket already connected, joining room...');
+      socket.emit('chat:join', { sessionId });
+    }
+
     return () => {
       socket?.off('connect', onConnect);
       socket?.off('disconnect', onDisconnect);
@@ -147,16 +153,36 @@ const ChatSessionView = ({ socket }) => {
       }
     };
 
+    const handleIncomingMessage = (newMessage) => {
+      console.log('[Chat] Incoming message from socket:', newMessage);
+      if (Number(newMessage.sessionId || newMessage.session_id) === sessionId) {
+        setMessages((prev) => {
+          const mapped = mapMessage(newMessage, myUserId);
+          
+          if (mapped.isOwn) {
+             const withoutPending = prev.filter(m => !(m.status === 'pending' && m.text === mapped.text));
+             if (withoutPending.some(m => m.id === mapped.id)) return withoutPending;
+             return [...withoutPending, mapped];
+          }
+
+          if (prev.some((m) => m.id === mapped.id)) return prev;
+          return [...prev, mapped];
+        });
+      }
+    };
+
+    socket.on('chat:message', handleIncomingMessage);
     socket.on('chat:room-joined', handleRoomJoined);
     socket.on('chat:error', handleSendError);
     socket.on('notification:message', handleOfflineNotification);
 
     return () => {
+      socket.off('chat:message', handleIncomingMessage);
       socket.off('chat:room-joined', handleRoomJoined);
       socket.off('chat:error', handleSendError);
       socket.off('notification:message', handleOfflineNotification);
     };
-  }, [socket, sessionId]);
+  }, [socket, sessionId, myUserId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -226,35 +252,6 @@ const ChatSessionView = ({ socket }) => {
   useEffect(() => {
     if (!socket || !sessionId || !myUserId) return undefined;
 
-    const handleIncomingMessage = (incomingMessage) => {
-      console.log('[Chat] Received raw socket message:', incomingMessage);
-      if (Number(incomingMessage.session_id) !== sessionId) {
-         console.warn('[Chat] Mismatched session id ignored:', incomingMessage.session_id);
-         return;
-      }
-      
-      const mapped = mapMessage(incomingMessage, myUserId);
-      console.log('[Chat] Mapped message:', mapped);
-      
-      setMessages((current) => {
-        if (mapped.isOwn) {
-          const exists = current.find(m => m.status === 'pending' && m.text === mapped.text);
-          if (exists) {
-            return current.map(m => (m === exists ? mapped : m));
-          }
-        }
-        if (current.find(m => m.id === mapped.id)) return current;
-        return [...current, mapped];
-      });
-
-      if (!mapped.isOwn) {
-        socket.emit('chat:seen', { sessionId });
-        setIsPartnerTyping(false);
-      } else {
-        setIsPartnerSeen(false);
-      }
-    };
-
     const handleTyping = (data) => {
       if (Number(data.sessionId) === sessionId && Number(data.userId) !== myUserId) {
         setIsPartnerTyping(data.isTyping);
@@ -268,16 +265,14 @@ const ChatSessionView = ({ socket }) => {
       }
     };
 
-    socket.on('chat:message', handleIncomingMessage);
     socket.on('chat:typing', handleTyping);
     socket.on('chat:seen', handleSeen);
 
     return () => {
-      socket.off('chat:message', handleIncomingMessage);
       socket.off('chat:typing', handleTyping);
       socket.off('chat:seen', handleSeen);
     };
-  }, [myUserId, sessionId, socket]);
+  }, [socket, sessionId, myUserId]);
 
   const handleSend = (event) => {
     event.preventDefault();

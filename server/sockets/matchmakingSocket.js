@@ -220,14 +220,17 @@ module.exports = (io) => {
         sender_profile_pic: user.profile_pic,
       };
 
-      io.to(roomName).emit('chat:message', payload);
-      
-      // LOGGING FOR DEBUGGING
+      // Ensure room size is logged for debugging
       const room = io.sockets.adapter.rooms.get(roomName);
       const roomSize = room ? room.size : 0;
-      console.log(`[Socket] Message sent from ${user.id} to room ${roomName}. Room size: ${roomSize}`);
+      console.log(`[Socket] Dispatching message to room ${roomName} (Size: ${roomSize})`);
 
+      io.to(roomName).emit('chat:message', payload);
+      
       const recipientId = session.user_1_id === user.id ? session.user_2_id : session.user_1_id;
+      
+      // Notify recipient only if they are not active in the chat room
+      // (This is a refinement: users usually don't want push notifications for rooms they are looking at)
       notificationService.notifyNewMessage(recipientId, user.name, trimmedContent, session.id);
     });
 

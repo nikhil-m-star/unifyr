@@ -195,7 +195,6 @@ const AppContent = () => {
         if (currentChatSessionId && Number(currentChatSessionId) === Number(data.sessionId)) {
           return;
         }
-
         toast(
           (t) => (
             <div
@@ -211,6 +210,31 @@ const AppContent = () => {
             </div>
           ),
           { duration: 4000, icon: '💬' }
+        );
+      });
+      
+      socketInstance.on('notification:join_request', (data) => {
+        addNotification({
+          type: 'new_join_request',
+          title: data.title,
+          message: data.message,
+          timestamp: data.timestamp,
+        });
+
+        toast(
+          (t) => (
+            <div
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate('/manage');
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ fontWeight: 700 }}>{data.title}</div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.message}</div>
+            </div>
+          ),
+          { duration: 6000, icon: '📩' }
         );
       });
 

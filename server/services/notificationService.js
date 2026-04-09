@@ -97,10 +97,27 @@ const markOfflineMessagesDelivered = async (messageIds) => {
   }
 };
 
+const notifyNewJoinRequest = (recipientId, senderName, teamName, pitchSnippet) => {
+  if (!ioInstance) {
+    console.error('Notification Service: ioInstance not initialized');
+    return;
+  }
+
+  ioInstance.to(`user:${recipientId}`).emit('notification:join_request', {
+    type: 'new_join_request',
+    title: 'New Pitch Received! 🚀',
+    message: `${senderName} wants to join "${teamName}": "${pitchSnippet}"`,
+    senderName,
+    teamName,
+    timestamp: new Date().toISOString()
+  });
+};
+
 module.exports = {
   init,
   notifyRequestAccepted,
   notifyNewMessage,
+  notifyNewJoinRequest,
   storeOfflineMessage,
   getOfflineMessages,
   markOfflineMessagesDelivered

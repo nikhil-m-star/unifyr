@@ -78,6 +78,13 @@ const createJoinRequest = async (req, res) => {
     }
 
     const request = await joinRequestModel.createJoinRequest(teamId, senderId, pitch);
+    
+    // Notify team owner
+    if (team.creator_id) {
+      const pitchSnippet = pitch.length > 60 ? `${pitch.substring(0, 57)}...` : pitch;
+      notificationService.notifyNewJoinRequest(team.creator_id, req.dbUser.name, team.team_name || team.teamName, pitchSnippet);
+    }
+
     res.status(201).json({ message: 'Join request sent', request });
   } catch (error) {
     console.error('Create Join Request Error:', error);

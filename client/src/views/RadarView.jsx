@@ -13,6 +13,7 @@ const RadarView = () => {
   const [partner, setPartner] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [activeUsers, setActiveUsers] = useState([]);
+  const [totalActiveCount, setTotalActiveCount] = useState(0);
   const socketRef = useRef(null);
   const { getToken, isSignedIn } = useAuth();
   const navigate = useNavigate();
@@ -66,7 +67,10 @@ const RadarView = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (mounted) {
-          setActiveUsers(Array.isArray(response.data?.users) ? response.data.users : []);
+          const u = Array.isArray(response.data?.users) ? response.data.users : [];
+          setActiveUsers(u);
+          // count is length of other users, so +1 for current user
+          setTotalActiveCount((response.data?.count || 0) + 1);
         }
       } catch (error) {
         console.error('Failed to fetch active users:', error);
@@ -109,8 +113,16 @@ const RadarView = () => {
   };
 
   return (
-    <div className="market-shell" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBlock: '2rem' }}>
-      <div style={{ maxWidth: '800px', width: '100%', marginInline: 'auto' }}>
+    <div className="market-shell" style={{ 
+      minHeight: 'calc(100vh - 80px)', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: isMobile ? '1rem' : '2rem',
+      overflow: 'hidden'
+    }}>
+      <div style={{ maxWidth: '800px', width: '100%', margin: 'auto', position: 'relative', zIndex: 10 }}>
         <AnimatePresence mode="wait">
           {status === 'idle' && (
             <motion.div
@@ -120,7 +132,7 @@ const RadarView = () => {
               exit={{ opacity: 0, scale: 1.05 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
-              <GlassCard style={{ padding: '2.5rem', textAlign: 'center', overflow: 'hidden', position: 'relative' }}>
+              <GlassCard style={{ padding: isMobile ? '1.5rem' : '3rem', textAlign: 'center', overflow: 'hidden', position: 'relative' }}>
                 <div style={{
                   position: 'absolute',
                   top: '-100px',
@@ -128,41 +140,41 @@ const RadarView = () => {
                   width: '300px',
                   height: '300px',
                   background: 'radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%)',
-                  zIndex: 0
+                  zIndex: -1
                 }} />
                 
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div className="section-head" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
-                    <span className="section-kicker" style={{ background: 'rgba(255,255,255,0.1)', padding: '5px 12px', borderRadius: '10px' }}>
-                      <Zap size={12} style={{ color: '#fbbf24' }} /> SOCIAL RADAR
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <div className="section-head" style={{ justifyContent: 'center', marginBottom: '1.2rem' }}>
+                    <span className="section-kicker" style={{ background: 'rgba(255,255,255,0.08)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Zap size={14} style={{ color: '#fbbf24', fill: '#fbbf24' }} /> SOCIAL RADAR
                     </span>
                   </div>
                   
-                  <h1 className="page-title" style={{ fontSize: isMobile ? '2.2rem' : '3.2rem', marginBottom: '1.2rem', letterSpacing: '-0.03em' }}>
+                  <h1 className="page-title" style={{ fontSize: isMobile ? '2rem' : '3.5rem', marginBottom: '1rem', letterSpacing: '-0.04em', lineHeight: 1 }}>
                     Meet Someone <span style={{ color: 'var(--accent-primary)' }}>New.</span>
                   </h1>
                   
-                  <p className="messages-subtitle" style={{ fontSize: '1.1rem', marginInline: 'auto', marginBottom: '2.5rem', maxWidth: '500px' }}>
-                    Connect instantly with fellow students active on campus right now. No swipes, no waiting—just real talk.
+                  <p className="messages-subtitle" style={{ fontSize: '1.05rem', marginInline: 'auto', marginBottom: '2.5rem', maxWidth: '520px', opacity: 0.9 }}>
+                    Connect instantly with fellow students active across the campus right now. No swipes, just real talk.
                   </p>
 
                   <motion.button 
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(255,255,255,0.15)' }}
                     whileTap={{ scale: 0.95 }}
                     type="button" 
                     className="btn-primary" 
                     onClick={startMatch} 
-                    style={{ padding: '16px 36px', fontSize: '1.1rem', borderRadius: '18px', boxShadow: '0 10px 25px rgba(255,255,255,0.15)' }}
+                    style={{ padding: '18px 42px', fontSize: '1.15rem', borderRadius: '20px', fontWeight: 700 }}
                   >
-                    <RadarIcon size={20} className="pulse-icon" /> Start Scanning
+                    <RadarIcon size={22} className="pulse-icon" style={{ marginRight: '10px' }} /> Start Scanning
                   </motion.button>
 
                   <div style={{ marginTop: '4rem' }}>
-                    <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '1.5rem', opacity: 0.8 }}>
-                      <Users size={14} /> {activeUsers.length} Students Currently Active
+                    <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '1.5rem', opacity: 0.8, fontSize: '0.9rem' }}>
+                      <Users size={14} /> <strong>{totalActiveCount}</strong> Students Online Website-Wide
                     </div>
                     
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
                       {activeUsers.length > 0 ? (
                         activeUsers.slice(0, 8).map((user, i) => (
                           <motion.div 
@@ -190,7 +202,7 @@ const RadarView = () => {
                         <div style={{ opacity: 0.5, fontSize: '0.9rem' }}>Waiting for more students to join...</div>
                       )}
                       {activeUsers.length > 8 && (
-                        <div style={{ opacity: 0.6, fontSize: '0.85rem', alignSelf: 'center' }}>+{activeUsers.length - 8} others</div>
+                        <div style={{ opacity: 0.6, fontSize: '0.85rem', alignSelf: 'center', fontWeight: 600 }}>+{activeUsers.length - 8} more</div>
                       )}
                     </div>
                   </div>
@@ -205,20 +217,20 @@ const RadarView = () => {
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}
             >
-              <div className="radar-container">
-                <div className="radar-scanner"></div>
-                <div className="radar-circles">
+              <div className="radar-view-container">
+                <div className="radar-view-scanner"></div>
+                <div className="radar-view-circles">
                   <span></span><span></span><span></span>
                 </div>
-                <div className="radar-icon-wrap">
-                  <RadarIcon size={48} color="white" />
+                <div className="radar-view-icon">
+                  <RadarIcon size={44} color="white" />
                 </div>
               </div>
               
-              <h2 style={{ marginTop: '2.5rem', fontSize: '1.8rem', fontWeight: 800 }}>Scanning Radar...</h2>
-              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '1rem' }}>Found {activeUsers.length} potential connections.</p>
+              <h2 style={{ marginTop: '2.5rem', fontSize: '2rem', fontWeight: 900, textAlign: 'center' }}>Scanning Radar...</h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '1.1rem', textAlign: 'center' }}>Looking for your perfect connection among {totalActiveCount} users.</p>
               
               <motion.button 
                 whileHover={{ scale: 1.05 }}
@@ -226,7 +238,7 @@ const RadarView = () => {
                 type="button" 
                 className="btn-ghost" 
                 onClick={cancelMatch} 
-                style={{ marginTop: '2rem', padding: '10px 24px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)' }}
+                style={{ marginTop: '2.5rem', padding: '12px 28px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', fontSize: '0.95rem' }}
               >
                 <X size={14} /> Cancel Search
               </motion.button>
@@ -239,39 +251,45 @@ const RadarView = () => {
               initial={{ opacity: 0, scale: 0.8 }} 
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', damping: 20, stiffness: 350 }}
+              style={{ width: '100%' }}
             >
-              <GlassCard style={{ padding: '3rem', textAlign: 'center', border: '2px solid rgba(255,255,255,0.2)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+              <GlassCard style={{ padding: isMobile ? '2rem' : '4rem', textAlign: 'center', border: '2px solid rgba(255,255,255,0.15)', boxShadow: '0 25px 60px rgba(0,0,0,0.6)' }}>
                 <div style={{
-                  width: '100px',
-                  height: '100px',
+                  width: '120px',
+                  height: '120px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #fff 0%, #d4d4d4 100%)',
-                  margin: '0 auto 1.5rem',
+                  background: 'linear-gradient(135deg, #fff 0%, #a5a5a5 100%)',
+                  margin: '0 auto 2rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+                  padding: '4px'
                 }}>
-                  {partner?.profile_pic ? (
-                    <img src={partner.profile_pic} alt={partner.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: '2.5rem', fontWeight: 900, color: '#000' }}>{partner?.name?.charAt(0) || '!'}</span>
-                  )}
+                  <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: '#222' }}>
+                    {partner?.profile_pic ? (
+                      <img src={partner.profile_pic} alt={partner.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', fontWeight: 900, color: '#fff' }}>
+                        {partner?.name?.charAt(0) || '!'}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
-                <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '0.6rem', color: '#10b981', fontWeight: 800 }}>CONNECTION FOUND</div>
-                <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '0.8rem' }}>{partner?.name || 'Anonymous'}</h2>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
-                  {partner?.role || 'A fellow student'} is ready to chat with you!
+                <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '0.8rem', color: '#10b981', fontWeight: 900, letterSpacing: '0.1em' }}>CONNECTION ESTABLISHED</div>
+                <h2 style={{ fontSize: '2.8rem', fontWeight: 900, marginBottom: '0.8rem', letterSpacing: '-0.02em' }}>{partner?.name || 'Anonymous'}</h2>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', fontSize: '1.15rem', opacity: 0.8 }}>
+                  Is ready to chat with you! Start the conversation now.
                 </p>
                 
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                  <button type="button" className="btn-primary" onClick={openChat} style={{ padding: '14px 28px', borderRadius: '14px', fontSize: '1rem' }}>
-                    <MessageSquare size={18} /> Send Message
+                <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn-primary" onClick={openChat} style={{ padding: '16px 36px', borderRadius: '16px', fontSize: '1.05rem', fontWeight: 800 }}>
+                    <MessageSquare size={20} style={{ marginRight: '8px' }} /> Say Hello
                   </button>
-                  <button type="button" className="btn-ghost" onClick={() => setStatus('idle')} style={{ padding: '14px 24px', borderRadius: '14px' }}>
-                    Go Back
+                  <button type="button" className="btn-ghost" onClick={() => setStatus('idle')} style={{ padding: '16px 28px', borderRadius: '16px', fontWeight: 600 }}>
+                    Keep Scanning
                   </button>
                 </div>
               </GlassCard>
@@ -282,18 +300,18 @@ const RadarView = () => {
 
       <style>
         {`
-          .radar-container { position: relative; width: 220px; height: 220px; display: flex; alignItems: center; justifyContent: center; }
-          .radar-scanner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); background: conic-gradient(from 0deg, rgba(255,255,255,0.2) 0deg, transparent 90deg); animation: rotate-radar 2.5s linear infinite; }
-          .radar-circles span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; animation: pulse-radar 2.5s infinite ease-out; opacity: 0; }
-          .radar-circles span:nth-child(1) { width: 40px; height: 40px; animation-delay: 0s; }
-          .radar-circles span:nth-child(2) { width: 100px; height: 100px; animation-delay: 0.8s; }
-          .radar-circles span:nth-child(3) { width: 180px; height: 180px; animation-delay: 1.6s; }
-          .radar-icon-wrap { position: relative; z-index: 2; background: rgba(255,255,255,0.1); padding: 25px; border-radius: 50%; backdrop-filter: blur(5px); box-shadow: 0 0 30px rgba(255,255,255,0.05); }
-          .pulse-icon { animation: icon-pulse 2s infinite; }
+          .radar-view-container { position: relative; width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; transform: scale(${isMobile ? 0.8 : 1}); }
+          .radar-view-scanner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(255,255,255,0.08); background: conic-gradient(from 0deg, rgba(255,255,255,0.25) 0deg, transparent 110deg); animation: rotate-radar 3s linear infinite; }
+          .radar-view-circles span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid rgba(255,255,255,0.12); border-radius: 50%; animation: pulse-radar 3s infinite cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; }
+          .radar-view-circles span:nth-child(1) { width: 60px; height: 60px; animation-delay: 0s; }
+          .radar-view-circles span:nth-child(2) { width: 140px; height: 140px; animation-delay: 1s; }
+          .radar-view-circles span:nth-child(3) { width: 240px; height: 240px; animation-delay: 2s; }
+          .radar-view-icon { position: relative; z-index: 5; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 50%; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 40px rgba(255,255,255,0.1); }
+          .pulse-icon { animation: icon-pulse 2s infinite ease-in-out; }
           
           @keyframes rotate-radar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-          @keyframes pulse-radar { 0% { width: 20px; height: 20px; opacity: 0.8; } 100% { width: 240px; height: 240px; opacity: 0; } }
-          @keyframes icon-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+          @keyframes pulse-radar { 0% { width: 0px; height: 0px; opacity: 1; } 100% { width: 320px; height: 320px; opacity: 0; } }
+          @keyframes icon-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
         `}
       </style>
     </div>

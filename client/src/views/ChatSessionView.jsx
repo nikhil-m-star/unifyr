@@ -76,6 +76,28 @@ const ChatSessionView = ({ socket }) => {
     inputRef.current?.focus();
   }, []);
 
+  // Ensure socket joins the room
+  useEffect(() => {
+    if (socket && sessionId) {
+      const joinRoom = () => {
+        socket.emit('chat:join', { sessionId });
+      };
+      
+      joinRoom();
+      
+      // Secondary join after a short delay or state update to ensure auth is synced
+      const t = setTimeout(joinRoom, 1000);
+      
+      const onConnect = () => joinRoom();
+      socket.on('connect', onConnect);
+      
+      return () => {
+        clearTimeout(t);
+        socket.off('connect', onConnect);
+      };
+    }
+  }, [socket, sessionId, myUserId]); // Also rejoin when user ID is loaded
+
   useEffect(() => {
     if (!sessionId) return;
     let mounted = true;
@@ -92,7 +114,6 @@ const ChatSessionView = ({ socket }) => {
 
         if (!mounted) return;
 
-        // More robust user ID detection
         const meId = meRes.data?.user?.id || meRes.data?.id;
         setMyUserId(meId);
 
@@ -111,13 +132,14 @@ const ChatSessionView = ({ socket }) => {
         const history = (chatRes.data?.messages || []).map((entry) => mapMessage(entry, meId));
         setMessages(history);
         
-        // Check seen status for last own message
         if (history.length > 0) {
-          const lastOwn = [...history].reverse().find(m => m.isOwn);
-          if (lastOwn?.isRead) setIsPartnerSeen(true);
+          const lastOwnIdx = [...history].reverse().findIndex(m => m.isOwn);
+          if (lastOwnIdx !== -1) {
+            const lastOwn = [...history].reverse()[lastOwnIdx];
+            if (lastOwn?.isRead) setIsPartnerSeen(true);
+          }
         }
 
-        // Emit seen event
         socket?.emit('chat:seen', { sessionId });
       } catch (error) {
         console.error('Failed to load chat session:', error);
@@ -127,12 +149,11 @@ const ChatSessionView = ({ socket }) => {
     };
 
     load();
-    socket?.emit('chat:join', { sessionId });
 
     return () => {
       mounted = false;
     };
-  }, [getToken, sessionId, socket]);
+  }, [getToken, sessionId]);
 
   useEffect(() => {
     if (!socket || !sessionId || !myUserId) return undefined;
@@ -190,7 +211,6 @@ const ChatSessionView = ({ socket }) => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage || !socket || !sessionId) return;
 
-    // Optimistic Update
     const optimisticMsg = {
       id: `temp-${Date.now()}`,
       text: trimmedMessage,

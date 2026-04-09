@@ -35,8 +35,8 @@ const getChatSessionById = async (sessionId, requestingUserId = null) => {
         ELSE u1.role 
       END AS partner_role
     FROM chat_sessions cs
-    JOIN users u1 ON u1.id = cs.user_1_id
-    JOIN users u2 ON u2.id = cs.user_2_id
+    LEFT JOIN users u1 ON u1.id = cs.user_1_id
+    LEFT JOIN users u2 ON u2.id = cs.user_2_id
     WHERE cs.id = $1
   `;
   const { rows } = await pool.query(query, [sessionId, requestingUserId]);
@@ -153,8 +153,8 @@ const getUserChatSessions = async (userId) => {
       last_msg.created_at AS last_message_at,
       COALESCE(unread.count, 0) AS unread_count
     FROM chat_sessions cs
-    JOIN users u1 ON u1.id = cs.user_1_id
-    JOIN users u2 ON u2.id = cs.user_2_id
+    LEFT JOIN users u1 ON u1.id = cs.user_1_id
+    LEFT JOIN users u2 ON u2.id = cs.user_2_id
     LEFT JOIN LATERAL (
       SELECT content, created_at
       FROM messages

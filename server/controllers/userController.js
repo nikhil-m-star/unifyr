@@ -2,7 +2,10 @@ const { listActiveUsers } = require('../services/presenceService');
 
 const getActiveUsers = async (req, res) => {
   try {
-    const users = listActiveUsers(req.dbUser?.id);
+    if (!req.dbUser?.id) {
+      return res.status(200).json({ users: [], userIds: [], count: 0 });
+    }
+    const users = listActiveUsers(req.dbUser.id);
     const userIds = users.map(u => u.id);
     res.json({ users, userIds, count: users.length });
   } catch (error) {

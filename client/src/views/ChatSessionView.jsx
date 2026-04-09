@@ -38,6 +38,8 @@ const ChatSessionView = ({ socket }) => {
   const [partner, setPartner] = useState(location.state?.partner || null);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [isPartnerSeen, setIsPartnerSeen] = useState(false);
+  const [roomJoined, setRoomJoined] = useState(false);
+  const [sendError, setSendError] = useState(null);
   
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -96,6 +98,8 @@ const ChatSessionView = ({ socket }) => {
   // Ensure socket joins the room
   useEffect(() => {
     if (socket && sessionId) {
+      setRoomJoined(false);
+      
       const joinRoom = () => {
         console.log('[Chat] Requesting room join:', sessionId);
         socket.emit('chat:join', { sessionId });
@@ -114,6 +118,46 @@ const ChatSessionView = ({ socket }) => {
     }
   }, [socket, sessionId, myUserId]);
 
+  // Listen for room join confirmation and error events
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    const handleRoomJoined = (data) => {
+      if (Number(data.sessionId) === sessionId) {
+        console.log('[Chat] Room join confirmed for session:', sessionId);
+        setRoomJoined(true);
+      }
+    };
+
+    const handleSendError = (data) => {
+      console.warn('[Chat] Send error:', data.error);
+      setSendError(data.error);
+      // Remove optimistic message with matching text
+      if (data.messageText) {
+        setMessages(prev => prev.filter(m => !(m.status === 'pending' && m.text === data.messageText)));
+      }
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setSendError(null), 5000);
+    };
+
+    const handleOfflineNotification = (notification) => {
+      // Offline messages delivered on reconnect
+      if (notification.isOfflineMessage && Number(notification.sessionId) === sessionId) {
+        console.log('[Chat] Offline notification received from reconnect:', notification.title);
+      }
+    };
+
+    socket.on('chat:room-joined', handleRoomJoined);
+    socket.on('chat:error', handleSendError);
+    socket.on('notification:message', handleOfflineNotification);
+
+    return () => {
+      socket.off('chat:room-joined', handleRoomJoined);
+      socket.off('chat:error', handleSendError);
+      socket.off('notification:message', handleOfflineNotification);
+    };
+  }, [socket, sessionId]);
+
   useEffect(() => {
     if (!sessionId) return;
     let mounted = true;
@@ -122,10 +166,11 @@ const ChatSessionView = ({ socket }) => {
       try {
         const token = await getToken();
 
-        const [meRes, sessionsRes, chatRes] = await Promise.all([
+        const [meRes, sessionsRes, chatRes, offlineRes] = await Promise.all([
           axios.get('/users/me', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get('/chat', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`/chat/${sessionId}/messages`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('/chat/pending/offline', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { messages: [] } })),
         ]);
 
         if (!mounted) return;
@@ -148,6 +193,12 @@ const ChatSessionView = ({ socket }) => {
 
         const history = (chatRes.data?.messages || []).map((entry) => mapMessage(entry, meId));
         setMessages(history);
+        
+        // Show offline notifications as alerts
+        const offlineMessages = (offlineRes.data?.messages || []).filter(msg => Number(msg.session_id) === sessionId);
+        offlineMessages.forEach(msg => {
+          console.log('[Chat] Offline notification received:', msg.sender_name);
+        });
         
         if (history.length > 0) {
           const lastOwnIdx = [...history].reverse().findIndex(m => m.isOwn);
@@ -231,7 +282,12 @@ const ChatSessionView = ({ socket }) => {
   const handleSend = (event) => {
     event.preventDefault();
     const trimmedMessage = message.trim();
-    if (!trimmedMessage || !socket || !sessionId) return;
+    if (!trimmedMessage || !socket || !sessionId || !roomJoined) {
+      if (!roomJoined) {
+        console.warn('[Chat] Cannot send: room not joined yet');
+      }
+      return;
+    }
 
     const optimisticMsg = {
       id: `temp-${Date.now()}`,
@@ -244,6 +300,7 @@ const ChatSessionView = ({ socket }) => {
     };
 
     console.log('[Chat] Sending message:', trimmedMessage);
+    setSendError(null);
     setMessages(prev => [...prev, optimisticMsg]);
     setIsPartnerSeen(false);
     socket.emit('chat:send', { sessionId, content: trimmedMessage });
@@ -420,6 +477,20 @@ const ChatSessionView = ({ socket }) => {
         </div>
 
         <div className="chat-page__composer" style={{ padding: '1.25rem' }}>
+          {sendError && (
+            <div style={{
+              padding: '10px 14px',
+              marginBottom: '12px',
+              borderRadius: '12px',
+              background: 'rgba(255, 68, 68, 0.1)',
+              border: '1px solid rgba(255, 68, 68, 0.3)',
+              color: '#ff4444',
+              fontSize: '0.85rem',
+              fontWeight: 500
+            }}>
+              {sendError}
+            </div>
+          )}
           <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <input
               ref={inputRef}
@@ -433,7 +504,7 @@ const ChatSessionView = ({ socket }) => {
             <button
               type="submit"
               className="btn-primary"
-              disabled={!message.trim()}
+              disabled={!message.trim() || !roomJoined}
               style={{
                 width: '50px',
                 height: '50px',
@@ -442,8 +513,11 @@ const ChatSessionView = ({ socket }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0
+                flexShrink: 0,
+                opacity: !roomJoined ? 0.5 : 1,
+                transition: 'opacity 0.2s'
               }}
+              title={!roomJoined ? 'Joining chat room...' : 'Send message'}
             >
               <Send size={22} />
             </button>

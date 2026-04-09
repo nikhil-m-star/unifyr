@@ -18,6 +18,33 @@ const getTokenVerificationOptions = () => {
   return {};
 };
 
+// Deliver offline messages to a reconnected user
+const deliverOfflineMessages = async (socket, userId) => {
+  try {
+    const offlineMessages = await notificationService.getOfflineMessages(userId);
+    if (offlineMessages.length === 0) return;
+
+    console.log(`[Socket] Delivering ${offlineMessages.length} offline messages to user ${userId}`);
+    
+    offlineMessages.forEach(msg => {
+      socket.emit('notification:message', {
+        type: 'new_message',
+        title: `New Message from ${msg.sender_name}`,
+        message: msg.content.length > 60 ? `${msg.content.substring(0, 57)}...` : msg.content,
+        sessionId: msg.session_id,
+        timestamp: msg.sent_at,
+        isOfflineMessage: true
+      });
+    });
+
+    // Mark all delivered
+    const messageIds = offlineMessages.map(m => m.id);
+    await notificationService.markOfflineMessagesDelivered(messageIds);
+  } catch (error) {
+    console.error('[Socket] Error delivering offline messages:', error.message);
+  }
+};
+
 module.exports = (io) => {
   io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
@@ -50,6 +77,10 @@ module.exports = (io) => {
           socket.join(`user:${dbUser.id}`);
           upsertConnectedUser({ ...dbUser, socketId: socket.id });
           console.log(`[Socket] User ${dbUser.name} (${dbUser.id}) connected and synced.`);
+          
+          // Deliver offline messages on reconnect
+          await deliverOfflineMessages(socket, dbUser.id);
+          
           return dbUser;
         }
       } catch (error) {
@@ -122,35 +153,63 @@ module.exports = (io) => {
       const user = await ensureUser();
       if (!user || !sessionId) {
         console.warn(`[Socket] chat:join failed. User synced: ${!!user}, SessionID: ${sessionId}`);
+        socket.emit('chat:error', { error: 'Failed to join chat: invalid session ID' });
         return;
       }
 
       const session = await chatModel.getChatSessionById(Number(sessionId));
       if (!session) {
         console.warn(`[Socket] chat:join failed. Session ${sessionId} not found.`);
+        socket.emit('chat:error', { error: 'Chat session not found' });
         return;
       }
       
       if (![session.user_1_id, session.user_2_id].includes(user.id)) {
         console.warn(`[Socket] chat:join failed. User ${user.id} not in session ${sessionId}.`);
+        socket.emit('chat:error', { error: 'You are not authorized to access this chat' });
         return;
       }
 
       const roomName = `chat:${session.id}`;
       socket.join(roomName);
-      console.log(`[Socket] User ${user.id} joined room ${roomName}`);
+      socket.emit('chat:room-joined', { sessionId: session.id, roomName });
+      console.log(`[Socket] User ${user.id} joined room ${roomName} and confirmed`);
     });
 
     socket.on('chat:send', async ({ sessionId, content } = {}) => {
       const user = await ensureUser();
-      if (!user || !sessionId || typeof content !== 'string') return;
+      
+      if (!user) {
+        socket.emit('chat:error', { error: 'Please log in again to send messages' });
+        return;
+      }
+      
+      if (!sessionId) {
+        socket.emit('chat:error', { error: 'Invalid chat session', messageText: content });
+        return;
+      }
+      
+      if (typeof content !== 'string') {
+        socket.emit('chat:error', { error: 'Message must be text', messageText: content });
+        return;
+      }
 
       const trimmedContent = content.trim();
-      if (!trimmedContent) return;
+      if (!trimmedContent) {
+        socket.emit('chat:error', { error: 'Message cannot be empty', messageText: content });
+        return;
+      }
 
       const session = await chatModel.getChatSessionById(Number(sessionId));
-      if (!session) return;
-      if (![session.user_1_id, session.user_2_id].includes(user.id)) return;
+      if (!session) {
+        socket.emit('chat:error', { error: 'Chat session not found', messageText: trimmedContent });
+        return;
+      }
+      
+      if (![session.user_1_id, session.user_2_id].includes(user.id)) {
+        socket.emit('chat:error', { error: 'You are not authorized to send messages in this chat', messageText: trimmedContent });
+        return;
+      }
 
       const message = await chatModel.createMessage(session.id, user.id, trimmedContent);
       const roomName = `chat:${session.id}`;

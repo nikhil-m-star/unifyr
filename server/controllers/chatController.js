@@ -1,4 +1,5 @@
 const chatModel = require('../models/chatModel');
+const notificationService = require('../services/notificationService');
 
 const getSessionMessages = async (req, res) => {
   try {
@@ -83,9 +84,27 @@ const deleteMessage = async (req, res) => {
   }
 };
 
+const getPendingOfflineMessages = async (req, res) => {
+  try {
+    const pendingMessages = await notificationService.getOfflineMessages(req.dbUser.id);
+    
+    if (pendingMessages.length > 0) {
+      // Mark as delivered
+      const messageIds = pendingMessages.map(m => m.id);
+      await notificationService.markOfflineMessagesDelivered(messageIds);
+    }
+    
+    res.json({ messages: pendingMessages });
+  } catch (error) {
+    console.error('Failed to fetch pending offline messages:', error);
+    res.status(500).json({ message: 'Failed to fetch pending messages' });
+  }
+};
+
 module.exports = {
   getSessionMessages,
   getUserSessions,
   deleteSession,
   deleteMessage,
+  getPendingOfflineMessages,
 };

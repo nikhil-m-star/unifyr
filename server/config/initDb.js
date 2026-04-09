@@ -67,6 +67,18 @@ const createTables = async () => {
         is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS offline_messages (
+        id SERIAL PRIMARY KEY,
+        recipient_id INT REFERENCES users(id) ON DELETE CASCADE,
+        session_id INT,
+        sender_id INT REFERENCES users(id) ON DELETE SET NULL,
+        sender_name VARCHAR(255),
+        content TEXT,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        delivered_at TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+    );
     
     CREATE TABLE IF NOT EXISTS reports (
         id SERIAL PRIMARY KEY,

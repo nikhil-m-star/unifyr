@@ -126,18 +126,12 @@ module.exports = (io) => {
         const match = await findMatch(userId);
         if (!match) return;
 
-        // Skip if already in a pending match with someone
+        // Skip if already trying to pair this exact instance
         const sessionKey = getSessionKey(userId, match.userId);
         if (pendingMatches.has(sessionKey)) return;
 
-        // Skip if they already have a chat session
+        // Check if they already have a chat session
         const existingSession = await chatModel.getChatSessionByUsers(userId, match.userId);
-        if (existingSession) {
-          // If they already have a session, just find someone else later
-          // Note: In a real app we might want to dequeue them or notify them, 
-          // but for now we just skip this specific pairing in the loop.
-          return;
-        }
 
         // Dequeue both to prevent double-matching
         await dequeueUser(userId);
@@ -155,6 +149,14 @@ module.exports = (io) => {
 
         const currentUserProfile = await userModel.getPublicUserById(userId);
         const matchedUserProfile = await userModel.getPublicUserById(match.userId);
+
+        if (existingSession) {
+          // If they already know each other, auto-connect and skip the two-step accept!
+          io.to(socket.id).emit('match_success', { sessionId: existingSession.id, partner: matchedUserProfile });
+          io.to(match.socketId).emit('match_success', { sessionId: existingSession.id, partner: currentUserProfile });
+          console.log(`[Socket] Users ${userId} & ${match.userId} rematched. Auto-connected to session ${existingSession.id}.`);
+          return;
+        }
 
         const matchId = sessionKey;
         const pendingMatch = {

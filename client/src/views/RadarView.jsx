@@ -6,6 +6,7 @@ import { io } from 'socket.io-client';
 import { Loader2, Radar as RadarIcon, Users, MessageSquare, X, Zap } from 'lucide-react';
 import axios, { API_ORIGIN } from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
+import useIsMobile from '../hooks/useIsMobile';
 
 const RadarView = () => {
   const [status, setStatus] = useState('idle');
@@ -15,6 +16,7 @@ const RadarView = () => {
   const socketRef = useRef(null);
   const { getToken, isSignedIn } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isSignedIn || socketRef.current) return undefined;

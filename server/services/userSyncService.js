@@ -60,8 +60,14 @@ const syncUserFromClerk = async (clerkId, claims = {}) => {
 
   const normalizedEmail = profile.email || getFallbackEmail(clerkId);
 
-  // Enforce BMSCE domain restriction for all users except existing ones
-  if (!normalizedEmail.endsWith('@bmsce.ac.in') && clerkId.startsWith('user_')) {
+  const isBmsceEmail = normalizedEmail.endsWith('@bmsce.ac.in');
+  const isFallbackEmail = normalizedEmail.endsWith('.local');
+  const isAdmin = isAdminEmail(normalizedEmail);
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // Enforce BMSCE domain restriction for all users except existing ones, admins, and local fallbacks
+  // In development, we allow all emails to facilitate testing
+  if (!isBmsceEmail && !isFallbackEmail && !isAdmin && !isDev && clerkId.startsWith('user_')) {
     const error = new Error('Access restricted to bmsce.ac.in institutional emails only.');
     error.status = 403;
     throw error;

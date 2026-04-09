@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Sparkles, User } from 'lucide-react';
+import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Radar, Sparkles, User } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton, useAuth } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -27,21 +27,27 @@ const NavItems = ({
     </NavLink>
     <NavLink to="/events/active" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
       <Compass size={18} />
-      Active Events
+      Events
     </NavLink>
     <NavLink to="/recommendations" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
       <Sparkles size={18} />
-      AI Picks
+      AI
     </NavLink>
+    <SignedIn>
+      <NavLink to="/ready" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
+        <Radar size={18} />
+        Match
+      </NavLink>
+    </SignedIn>
     <SignedIn>
       <NavLink to="/messages" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <MessageSquare size={18} />
-        Messages
+        Chats
         <NotificationBadge count={unreadMessageCount} tone="danger" />
       </NavLink>
       <NavLink to="/notifications" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <Bell size={18} />
-        Notifications
+        Alerts
         <NotificationBadge count={unreadNotificationCount} />
       </NavLink>
       <NavLink to="/manage" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
@@ -110,12 +116,13 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   ];
 
   const signedInPrimaryNavItems = [
-    { to: '/recommendations', label: 'AI', icon: Sparkles },
+    { to: '/ready', label: 'Match', icon: Radar },
+    { to: '/messages', label: 'Chats', icon: MessageSquare },
     { to: '/notifications', label: 'Alerts', icon: Bell },
+    { to: '/recommendations', label: 'AI', icon: Sparkles },
   ];
 
   const signedInOverflowNavItems = [
-    { to: '/messages', label: 'Chats', icon: MessageSquare },
     { to: '/manage', label: 'Manage', icon: Edit },
   ];
 
@@ -124,6 +131,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   ];
 
   const signedOutPrimaryNavItems = [
+    { to: '/ready', label: 'Match', icon: Radar },
     { to: '/recommendations', label: 'AI', icon: Sparkles },
     { to: '/auth', label: 'Sign In', icon: LogIn },
   ];
@@ -138,7 +146,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
     ...(isSignedIn && isAdmin ? adminNavItems : []),
   ];
 
-  const visibleMobileItems = mobilePrimaryItems.slice(0, 4);
+  const visibleMobileItems = mobilePrimaryItems.slice(0, 6);
   const overflowMobileItems = mobileOverflowItems;
   const isOverflowActive = overflowMobileItems.some(({ to }) => location.pathname === to || location.pathname.startsWith(`${to}/`));
   const hasMoreOptions = overflowMobileItems.length > 0 || isSignedIn;

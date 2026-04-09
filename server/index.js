@@ -99,6 +99,9 @@ const io = new Server(server, {
   }
 });
 
+// Matchmaking + realtime chat socket handlers
+require('./sockets/matchmakingSocket')(io);
+
 // Initialize Global Notification Service
 notificationService.init(io);
 

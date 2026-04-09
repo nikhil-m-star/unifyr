@@ -14,6 +14,7 @@ import NotificationsView from './views/NotificationsView';
 import RecommendationsView from './views/RecommendationsView';
 import ActiveEventsView from './views/ActiveEventsView';
 import AdminView from './views/AdminView';
+import RadarView from './views/RadarView';
 import { API_ORIGIN } from './api/axios';
 import { NotificationProvider, useNotifications } from './context/NotificationContext';
 import useIsMobile from './hooks/useIsMobile';
@@ -229,6 +230,14 @@ const AppContent = () => {
           <Route path="/auth/*" element={<AuthView />} />
           <Route path="/events/active" element={<ActiveEventsView />} />
           <Route path="/recommendations" element={<RecommendationsView />} />
+          <Route
+            path="/ready"
+            element={
+              <ProtectedRoute>
+                <RadarView />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/manage"
             element={

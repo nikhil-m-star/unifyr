@@ -1,12 +1,22 @@
 const { pool } = require('./config/db');
 async function inspect() {
   try {
-    const users = await pool.query('SELECT id, auth_id, name FROM users');
-    console.log('Users:', users.rows);
-    const sessions = await pool.query('SELECT id, user_1_id, user_2_id FROM chat_sessions');
-    console.log('Sessions:', sessions.rows);
-    const msgs = await pool.query('SELECT id, session_id, sender_id, content FROM messages LIMIT 5');
-    console.log('Messages:', msgs.rows);
+    console.log('--- TABLES ---');
+    const tables = await pool.query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'");
+    console.log(tables.rows.map(r => r.table_name));
+
+    console.log('\n--- USERS (Last 5) ---');
+    const users = await pool.query('SELECT * FROM users ORDER BY id DESC LIMIT 5');
+    console.log(users.rows);
+
+    console.log('\n--- CHAT SESSIONS (Last 5) ---');
+    const sessions = await pool.query('SELECT * FROM chat_sessions ORDER BY id DESC LIMIT 5');
+    console.log(sessions.rows);
+
+    console.log('\n--- MESSAGES (Last 5) ---');
+    const msgs = await pool.query('SELECT * FROM messages ORDER BY id DESC LIMIT 5');
+    console.log(msgs.rows);
+
     process.exit();
   } catch (err) {
     console.error(err);

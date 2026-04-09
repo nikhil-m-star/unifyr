@@ -10,14 +10,14 @@ import { toast } from 'react-hot-toast';
 
 const mapMessage = (entry, myUserId) => {
   const senderId = entry.sender_id || entry.senderId;
-  const isOwn = Number(senderId) === Number(myUserId);
+  const isOwn = senderId && myUserId && String(senderId) === String(myUserId);
   return {
     id: entry.id,
     text: entry.content || entry.text,
     senderId,
     senderName: entry.sender_name || entry.senderName,
     timestamp: entry.created_at || entry.timestamp,
-    isOwn,
+    isOwn: !!isOwn,
     isRead: entry.is_read || entry.isRead,
     status: 'sent',
   };
@@ -182,9 +182,14 @@ const ChatSessionView = ({ socket }) => {
           
           if (pendingIndex !== -1) {
             const next = [...prev];
-            mapped.isOwn = true; // Force true because we matched it to our pending queue
-            next[pendingIndex] = mapped;
+            const updatedMessage = { ...mapped, isOwn: true }; // Force true because we matched it to our pending state
+            next[pendingIndex] = updatedMessage;
             return next;
+          }
+          
+          // 3. One more safety check: even if not in pending, check senderId directly
+          if (String(newMessage.sender_id || newMessage.senderId) === String(myUserIdRef.current)) {
+            mapped.isOwn = true;
           }
           
           // 3. Otherwise append as normal

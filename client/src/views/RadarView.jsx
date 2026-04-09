@@ -114,14 +114,14 @@ const RadarView = () => {
             <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               <GlassCard style={{ padding: '1.4rem' }}>
                 <div className="section-head">
-                  <span className="section-kicker">Match</span>
+                  <span className="section-kicker">Social</span>
                 </div>
-                <h1 className="page-title" style={{ marginBottom: '0.8rem' }}>Find a Random Teammate</h1>
+                <h1 className="page-title" style={{ marginBottom: '0.8rem' }}>Meet Someone New</h1>
                 <p className="messages-subtitle" style={{ marginBottom: '1rem' }}>
-                  Join the queue and get paired instantly with an active user.
+                  Join the queue and connect instantly with an active user for a random chat.
                 </p>
                 <button type="button" className="btn-primary" onClick={startMatch}>
-                  <Radar size={16} /> Start Match
+                  <Radar size={16} /> Start Connecting
                 </button>
 
                 <div style={{ marginTop: '1.2rem' }}>
@@ -146,8 +146,8 @@ const RadarView = () => {
             <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <GlassCard style={{ padding: '2rem', textAlign: 'center' }}>
                 <Loader2 className="animate-spin" size={28} />
-                <h2 style={{ marginTop: '1rem' }}>Finding Match...</h2>
-                <p className="messages-subtitle">Searching for an active teammate now.</p>
+                <h2 style={{ marginTop: '1rem' }}>Finding Someone...</h2>
+                <p className="messages-subtitle">Searching for a new connection now.</p>
                 <button type="button" className="btn-ghost" onClick={cancelMatch} style={{ marginTop: '1rem' }}>
                   <X size={14} /> Cancel
                 </button>
@@ -158,8 +158,8 @@ const RadarView = () => {
           {status === 'matched' && (
             <motion.div key="matched" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               <GlassCard style={{ padding: '1.6rem', textAlign: 'center' }}>
-                <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '0.55rem' }}>Matched</div>
-                <h2 style={{ marginBottom: '0.5rem' }}>{partner?.name || 'Teammate Found'}</h2>
+                <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '0.55rem' }}>Connected</div>
+                <h2 style={{ marginBottom: '0.5rem' }}>{partner?.name || 'Found Someone!'}</h2>
                 <p className="messages-subtitle" style={{ marginBottom: '1rem' }}>
                   Your chat session is ready.
                 </p>

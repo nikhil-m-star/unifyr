@@ -36,7 +36,7 @@ const NavItems = ({
     <SignedIn>
       <NavLink to="/ready" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <Radar size={18} />
-        Match
+        Social
       </NavLink>
     </SignedIn>
     <SignedIn>
@@ -116,7 +116,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   ];
 
   const signedInPrimaryNavItems = [
-    { to: '/ready', label: 'Match', icon: Radar },
+    { to: '/ready', label: 'Social', icon: Radar },
     { to: '/messages', label: 'Chats', icon: MessageSquare },
     { to: '/notifications', label: 'Alerts', icon: Bell },
     { to: '/recommendations', label: 'AI', icon: Sparkles },
@@ -131,7 +131,7 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   ];
 
   const signedOutPrimaryNavItems = [
-    { to: '/ready', label: 'Match', icon: Radar },
+    { to: '/ready', label: 'Social', icon: Radar },
     { to: '/recommendations', label: 'AI', icon: Sparkles },
     { to: '/auth', label: 'Sign In', icon: LogIn },
   ];

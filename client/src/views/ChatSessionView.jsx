@@ -44,6 +44,23 @@ const ChatSessionView = ({ socket }) => {
   const typingTimeoutRef = useRef(null);
   const lastTypingEmitRef = useRef(0);
 
+  // Diagnostic Logs
+  useEffect(() => {
+    console.log('[Chat] Mounting session:', sessionId);
+    console.log('[Chat] Socket connected:', socket?.connected);
+    
+    const onConnect = () => console.log('[Chat] Socket reconnected.');
+    const onDisconnect = () => console.log('[Chat] Socket disconnected.');
+    
+    socket?.on('connect', onConnect);
+    socket?.on('disconnect', onDisconnect);
+    
+    return () => {
+      socket?.off('connect', onConnect);
+      socket?.off('disconnect', onDisconnect);
+    };
+  }, [socket, sessionId]);
+
   // Clear relevant notifications on mount
   useEffect(() => {
     if (!sessionId) return;
@@ -80,23 +97,22 @@ const ChatSessionView = ({ socket }) => {
   useEffect(() => {
     if (socket && sessionId) {
       const joinRoom = () => {
+        console.log('[Chat] Requesting room join:', sessionId);
         socket.emit('chat:join', { sessionId });
       };
       
       joinRoom();
       
-      // Secondary join after a short delay or state update to ensure auth is synced
-      const t = setTimeout(joinRoom, 1000);
-      
-      const onConnect = () => joinRoom();
-      socket.on('connect', onConnect);
+      // Retry join slightly later to catch identity sync completion
+      const t1 = setTimeout(joinRoom, 500);
+      const t2 = setTimeout(joinRoom, 2000);
       
       return () => {
-        clearTimeout(t);
-        socket.off('connect', onConnect);
+        clearTimeout(t1);
+        clearTimeout(t2);
       };
     }
-  }, [socket, sessionId, myUserId]); // Also rejoin when user ID is loaded
+  }, [socket, sessionId, myUserId]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -115,6 +131,7 @@ const ChatSessionView = ({ socket }) => {
         if (!mounted) return;
 
         const meId = meRes.data?.user?.id || meRes.data?.id;
+        console.log('[Chat] Identity resolved:', meId);
         setMyUserId(meId);
 
         const sessionsList = Array.isArray(sessionsRes.data?.sessions) ? sessionsRes.data.sessions : [];
@@ -142,7 +159,7 @@ const ChatSessionView = ({ socket }) => {
 
         socket?.emit('chat:seen', { sessionId });
       } catch (error) {
-        console.error('Failed to load chat session:', error);
+        console.error('[Chat] Load failure:', error);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -159,9 +176,14 @@ const ChatSessionView = ({ socket }) => {
     if (!socket || !sessionId || !myUserId) return undefined;
 
     const handleIncomingMessage = (incomingMessage) => {
-      if (Number(incomingMessage.session_id) !== sessionId) return;
+      console.log('[Chat] Received raw socket message:', incomingMessage);
+      if (Number(incomingMessage.session_id) !== sessionId) {
+         console.warn('[Chat] Mismatched session id ignored:', incomingMessage.session_id);
+         return;
+      }
       
       const mapped = mapMessage(incomingMessage, myUserId);
+      console.log('[Chat] Mapped message:', mapped);
       
       setMessages((current) => {
         if (mapped.isOwn) {
@@ -221,6 +243,7 @@ const ChatSessionView = ({ socket }) => {
       status: 'pending'
     };
 
+    console.log('[Chat] Sending message:', trimmedMessage);
     setMessages(prev => [...prev, optimisticMsg]);
     setIsPartnerSeen(false);
     socket.emit('chat:send', { sessionId, content: trimmedMessage });
@@ -266,7 +289,7 @@ const ChatSessionView = ({ socket }) => {
       });
       setMessages((currentMessages) => currentMessages.filter((entry) => entry.id !== messageId));
     } catch (error) {
-      console.error('Failed to delete message:', error);
+      console.error('[Chat] Delete failure:', error);
       alert('Unable to delete the message right now.');
     } finally {
       setDeletingMessageId(null);

@@ -40,24 +40,37 @@ module.exports = (io) => {
 
   io.on('connection', async (socket) => {
     let dbUser = null;
+    let syncPromise = null;
 
-    try {
-      dbUser = await syncUserFromClerk(socket.clerkUserId, socket.clerkClaims);
-      if (dbUser) {
-        socket.join(`user:${dbUser.id}`);
-        upsertConnectedUser({ ...dbUser, socketId: socket.id });
+    // Start sync immediately
+    syncPromise = (async () => {
+      try {
+        dbUser = await syncUserFromClerk(socket.clerkUserId, socket.clerkClaims);
+        if (dbUser) {
+          socket.join(`user:${dbUser.id}`);
+          upsertConnectedUser({ ...dbUser, socketId: socket.id });
+          console.log(`[Socket] User ${dbUser.name} (${dbUser.id}) connected and synced.`);
+          return dbUser;
+        }
+      } catch (error) {
+        console.error('[Socket] User sync error:', error.message);
       }
-    } catch (error) {
-      console.error('Socket user sync error:', error.message);
-    }
+      return null;
+    })();
+
+    const ensureUser = async () => {
+      if (dbUser) return dbUser;
+      return await syncPromise;
+    };
 
     socket.on('join_queue', async ({ topicKeywords } = {}) => {
-      if (!dbUser) {
+      const user = await ensureUser();
+      if (!user) {
         socket.emit('queue_error', { message: 'Could not sync your account for matchmaking yet.' });
         return;
       }
 
-      const userId = dbUser.id;
+      const userId = user.id;
       const normalizedTopic = normalizeTopic(topicKeywords);
 
       await enqueueUser(userId, socket.id, normalizedTopic);
@@ -106,77 +119,93 @@ module.exports = (io) => {
     });
 
     socket.on('chat:join', async ({ sessionId } = {}) => {
-      if (!dbUser || !sessionId) return;
+      const user = await ensureUser();
+      if (!user || !sessionId) {
+        console.warn(`[Socket] chat:join failed. User synced: ${!!user}, SessionID: ${sessionId}`);
+        return;
+      }
 
       const session = await chatModel.getChatSessionById(Number(sessionId));
-      if (!session) return;
-      if (![session.user_1_id, session.user_2_id].includes(dbUser.id)) return;
+      if (!session) {
+        console.warn(`[Socket] chat:join failed. Session ${sessionId} not found.`);
+        return;
+      }
+      
+      if (![session.user_1_id, session.user_2_id].includes(user.id)) {
+        console.warn(`[Socket] chat:join failed. User ${user.id} not in session ${sessionId}.`);
+        return;
+      }
 
-      socket.join(`chat:${session.id}`);
+      const roomName = `chat:${session.id}`;
+      socket.join(roomName);
+      console.log(`[Socket] User ${user.id} joined room ${roomName}`);
     });
 
     socket.on('chat:send', async ({ sessionId, content } = {}) => {
-      if (!dbUser || !sessionId || typeof content !== 'string') return;
+      const user = await ensureUser();
+      if (!user || !sessionId || typeof content !== 'string') return;
 
       const trimmedContent = content.trim();
       if (!trimmedContent) return;
 
       const session = await chatModel.getChatSessionById(Number(sessionId));
       if (!session) return;
-      if (![session.user_1_id, session.user_2_id].includes(dbUser.id)) return;
+      if (![session.user_1_id, session.user_2_id].includes(user.id)) return;
 
-      const message = await chatModel.createMessage(session.id, dbUser.id, trimmedContent);
-      io.to(`chat:${session.id}`).emit('chat:message', {
+      const message = await chatModel.createMessage(session.id, user.id, trimmedContent);
+      const roomName = `chat:${session.id}`;
+      
+      const payload = {
         ...message,
-        sender_name: dbUser.name,
-        sender_profile_pic: dbUser.profile_pic,
-      });
+        sender_name: user.name,
+        sender_profile_pic: user.profile_pic,
+      };
 
-      const recipientId = session.user_1_id === dbUser.id ? session.user_2_id : session.user_1_id;
+      io.to(roomName).emit('chat:message', payload);
       
-      // Check if recipient is in the room before notifying
-      const roomMembers = io.sockets.adapter.rooms.get(`chat:${session.id}`);
-      const isRecipientInRoom = roomMembers && Array.from(roomMembers).some(socketId => {
-        const s = io.sockets.sockets.get(socketId);
-        return s && s.clerkUserId === (session.user_1_id === dbUser.id ? session.user_1_clerk_id : session.user_2_clerk_id);
-      });
-      
-      // We'll simplify: just always notify, but the frontend will filter it out if they are in the chat.
-      // But actually, the user asked to suppress notifications when already chatting.
-      // The most reliable way is to let the frontend handle the suppression based on the current route.
-      notificationService.notifyNewMessage(recipientId, dbUser.name, trimmedContent, session.id);
+      // LOGGING FOR DEBUGGING
+      const room = io.sockets.adapter.rooms.get(roomName);
+      const roomSize = room ? room.size : 0;
+      console.log(`[Socket] Message sent from ${user.id} to room ${roomName}. Room size: ${roomSize}`);
+
+      const recipientId = session.user_1_id === user.id ? session.user_2_id : session.user_1_id;
+      notificationService.notifyNewMessage(recipientId, user.name, trimmedContent, session.id);
     });
 
-    socket.on('chat:typing', ({ sessionId, isTyping } = {}) => {
-      if (!dbUser || !sessionId) return;
-      socket.to(`chat:${sessionId}`).emit('chat:typing', { sessionId, userId: dbUser.id, isTyping });
+    socket.on('chat:typing', async ({ sessionId, isTyping } = {}) => {
+      const user = await ensureUser();
+      if (!user || !sessionId) return;
+      socket.to(`chat:${sessionId}`).emit('chat:typing', { sessionId, userId: user.id, isTyping });
     });
 
     socket.on('chat:seen', async ({ sessionId } = {}) => {
-      if (!dbUser || !sessionId) return;
-      await chatModel.markMessagesRead(Number(sessionId), dbUser.id);
-      socket.to(`chat:${sessionId}`).emit('chat:seen', { sessionId, userId: dbUser.id });
+      const user = await ensureUser();
+      if (!user || !sessionId) return;
+      await chatModel.markMessagesRead(Number(sessionId), user.id);
+      socket.to(`chat:${sessionId}`).emit('chat:seen', { sessionId, userId: user.id });
     });
 
     socket.on('leave_queue', async () => {
-      if (!dbUser) return;
+      const user = await ensureUser();
+      if (!user) return;
 
-      await dequeueUser(dbUser.id);
-      if (matchCheckerIntervals.has(dbUser.id)) {
-        clearInterval(matchCheckerIntervals.get(dbUser.id));
-        matchCheckerIntervals.delete(dbUser.id);
+      await dequeueUser(user.id);
+      if (matchCheckerIntervals.has(user.id)) {
+        clearInterval(matchCheckerIntervals.get(user.id));
+        matchCheckerIntervals.delete(user.id);
       }
     });
 
     socket.on('disconnect', async () => {
-      if (!dbUser) return;
+      const user = await ensureUser();
+      if (!user) return;
 
-      await dequeueUser(dbUser.id);
-      removeConnectedUserSocket(dbUser.id, socket.id);
+      await dequeueUser(user.id);
+      removeConnectedUserSocket(user.id, socket.id);
 
-      if (matchCheckerIntervals.has(dbUser.id)) {
-        clearInterval(matchCheckerIntervals.get(dbUser.id));
-        matchCheckerIntervals.delete(dbUser.id);
+      if (matchCheckerIntervals.has(user.id)) {
+        clearInterval(matchCheckerIntervals.get(user.id));
+        matchCheckerIntervals.delete(user.id);
       }
     });
   });

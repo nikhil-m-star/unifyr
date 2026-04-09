@@ -43,6 +43,7 @@ const ChatSessionView = ({ socket }) => {
   const [sendError, setSendError] = useState(null);
   const [onlineIds, setOnlineIds] = useState(new Set());
   const [errorMessage, setErrorMessage] = useState(null);
+  const [roomJoined, setRoomJoined] = useState(false);
   
   // Keep ref in sync for socket handlers
   useEffect(() => {

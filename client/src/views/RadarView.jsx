@@ -10,9 +10,10 @@ import useIsMobile from '../hooks/useIsMobile';
 import { toast } from 'react-hot-toast';
 
 const RadarView = () => {
-  const [status, setStatus] = useState('idle'); // idle, waiting, matched
+  const [status, setStatus] = useState('idle'); // idle, waiting, pending, matched
   const [partner, setPartner] = useState(null);
   const [sessionId, setSessionId] = useState(null);
+  const [pendingMatchId, setPendingMatchId] = useState(null);
   const [activeUsers, setActiveUsers] = useState([]);
   const [totalActiveCount, setTotalActiveCount] = useState(0);
   const socketRef = useRef(null);
@@ -39,6 +40,26 @@ const RadarView = () => {
           setPartner(matchedPartner || null);
           setSessionId(matchedSessionId || null);
           setStatus('matched');
+        });
+
+        socket.on('match_pending', ({ matchId, partnerName, partnerProfilePic }) => {
+          console.log('[Radar] Match pending:', matchId);
+          setPendingMatchId(matchId);
+          setPartner({ name: partnerName, profile_pic: partnerProfilePic });
+          setStatus('pending');
+        });
+
+        socket.on('match_cancelled', ({ reason }) => {
+          console.log('[Radar] Match cancelled:', reason);
+          setStatus((prev) => {
+            if (prev === 'pending') {
+              toast.error(reason === 'timeout' ? 'Match connection timed out.' : 'Match declined.');
+              setPartner(null);
+              setPendingMatchId(null);
+              return 'idle';
+            }
+            return prev;
+          });
         });
 
         socket.on('queue_error', ({ message }) => {
@@ -108,6 +129,20 @@ const RadarView = () => {
     setStatus('idle');
     setPartner(null);
     setSessionId(null);
+  };
+
+  const acceptMatch = () => {
+    if (!pendingMatchId || !socketRef.current) return;
+    socketRef.current.emit('chat:accept', { matchId: pendingMatchId });
+    toast('Waiting for partner to accept...', { icon: '⏳' });
+  };
+
+  const declineMatch = () => {
+    if (!pendingMatchId || !socketRef.current) return;
+    socketRef.current.emit('chat:decline', { matchId: pendingMatchId });
+    setStatus('idle');
+    setPendingMatchId(null);
+    setPartner(null);
   };
 
   const openChat = () => {
@@ -266,6 +301,69 @@ const RadarView = () => {
               >
                 <X size={16} style={{ marginRight: '8px' }} /> Abort Scan
               </motion.button>
+            </motion.div>
+          )}
+
+          {status === 'pending' && (
+            <motion.div 
+              key="pending" 
+              initial={{ opacity: 0, scale: 0.85 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.1 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+              className="matched-card-success"
+              style={{ width: '100%', maxWidth: '520px', marginInline: 'auto' }}
+            >
+              <GlassCard style={{ padding: isMobile ? '2.5rem' : '4rem', textAlign: 'center', borderRadius: '40px', border: '2px solid rgba(255,255,255,0.2)', boxShadow: '0 40px 100px rgba(0,0,0,0.8)' }}>
+                <div style={{ position: 'relative', width: '140px', height: '140px', margin: '0 auto 2.5rem' }}>
+                  <div className="avatar-glow" style={{ background: 'radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%)' }}></div>
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #fbbf24 0%, #b45309 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    padding: '4px',
+                    position: 'relative',
+                    zIndex: 2
+                  }}>
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: '#111' }}>
+                      {partner?.profile_pic ? (
+                        <img src={partner.profile_pic} alt={partner.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem', fontWeight: 900, color: '#fbbf24' }}>
+                          {partner?.name?.charAt(0) || '?'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <motion.div 
+                    animate={{ scale: [1, 1.2, 1], opacity: [0, 1, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    style={{ position: 'absolute', inset: -20, borderRadius: '50%', border: '2px solid rgba(251, 191, 36, 0.4)', zIndex: 1 }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '2.5rem' }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '12px', background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fbbf24', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+                    <Users size={12} /> Connection Pending
+                  </div>
+                  <h2 style={{ fontSize: '2.8rem', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-0.04em' }}>{partner?.name?.split(' ')[0] || 'Anonymous'}</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', fontWeight: 500, opacity: 0.8 }}>Found someone! Do you want to connect?</p>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button type="button" className="btn-ghost" onClick={declineMatch} style={{ flex: 1, padding: '18px', borderRadius: '20px', fontWeight: 700, border: 'none', background: 'rgba(255, 255, 255, 0.05)' }}>
+                    Skip
+                  </button>
+                  <button type="button" className="btn-primary" onClick={acceptMatch} style={{ flex: 1, padding: '18px', borderRadius: '20px', fontSize: '1.1rem', fontWeight: 800 }}>
+                    Accept
+                  </button>
+                </div>
+              </GlassCard>
             </motion.div>
           )}
 

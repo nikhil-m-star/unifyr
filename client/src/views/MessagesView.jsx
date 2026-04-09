@@ -131,16 +131,22 @@ const MessagesView = () => {
                     position: 'relative',
                     borderLeft: hasUnread ? '3px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.08)'
                   }}
-                  onClick={() => navigate(`/messages/${session.id}`, {
-                    state: {
-                      partner: {
-                        id: session.partner_id,
-                        name: session.partner_name,
-                        profile_pic: session.partner_profile_pic,
-                        role: session.partner_role,
-                      },
-                    },
-                  })}
+                  onClick={() => {
+                    if (session.id && session.partner_id) {
+                      navigate(`/messages/${session.id}`, {
+                        state: {
+                          partner: {
+                            id: session.partner_id,
+                            name: session.partner_name,
+                            profile_pic: session.partner_profile_pic,
+                            role: session.partner_role,
+                          },
+                        },
+                      });
+                    } else {
+                      toast.error('Could not open conversation. Missing session data.');
+                    }
+                  }}
                 >
                   <div className="msg-avatar-wrap">
                     <div className="msg-avatar" style={{ 

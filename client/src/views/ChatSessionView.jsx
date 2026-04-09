@@ -42,6 +42,7 @@ const ChatSessionView = ({ socket }) => {
   const [isPartnerSeen, setIsPartnerSeen] = useState(false);
   const [sendError, setSendError] = useState(null);
   const [onlineIds, setOnlineIds] = useState(new Set());
+  const [errorMessage, setErrorMessage] = useState(null);
   
   // Keep ref in sync for socket handlers
   useEffect(() => {
@@ -217,6 +218,11 @@ const ChatSessionView = ({ socket }) => {
 
     const load = async () => {
       try {
+        if (isNaN(sessionId)) {
+          setErrorMessage('Invalid conversation link.');
+          return;
+        }
+
         const token = await getToken();
 
         const [meRes, sessionsRes, chatRes, offlineRes] = await Promise.all([
@@ -267,7 +273,14 @@ const ChatSessionView = ({ socket }) => {
 
         socket?.emit('chat:seen', { sessionId });
       } catch (error) {
-        console.error('[Chat] Load failure:', error);
+        console.error('[Chat] Initialization failed:', error);
+        if (error.response?.status === 403) {
+          setErrorMessage('You do not have permission to view this conversation.');
+        } else if (error.response?.status === 404) {
+          setErrorMessage('This conversation no longer exists.');
+        } else {
+          setErrorMessage('Something went wrong while loading the chat. Please try again.');
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -399,37 +412,54 @@ const ChatSessionView = ({ socket }) => {
     <div className="market-shell" style={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
       <div className="chat-page" style={{ flex: 1, height: '100%', borderRadius: isMobile ? '0' : '24px' }}>
         <div className="chat-page__header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <button onClick={() => navigate('/messages')} className="btn-ghost" style={{ width: '38px', height: '38px', padding: 0, borderRadius: '12px', minWidth: '38px' }}>
-              <ArrowLeft size={20} />
-            </button>
-            <div className="chat-page__avatar">
-              {partner?.profile_pic ? (
-                <img src={partner.profile_pic} alt={partner?.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <span style={{ color: '#0a0a0a', fontWeight: 800 }}>{partner?.name?.charAt(0) || 'U'}</span>
-              )}
+          {errorMessage ? (
+            <div style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button onClick={() => navigate('/messages')} className="btn-ghost" style={{ width: '38px', height: '38px', padding: 0, borderRadius: '12px', minWidth: '38px' }}>
+                <ArrowLeft size={20} />
+              </button>
+              <h3 style={{ fontSize: '1rem', color: '#ff4444' }}>Error</h3>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <h3 className="chat-page__name" style={{ fontSize: '1rem' }}>{partner?.name || 'Loading...'}</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ 
-                  width: '6px', 
-                  height: '6px', 
-                  borderRadius: '50%', 
-                  background: onlineIds.has(partner?.id) ? '#10b981' : '#4b5563',
-                  boxShadow: onlineIds.has(partner?.id) ? '0 0 6px rgba(16, 185, 129, 0.4)' : 'none'
-                }} />
-                <span style={{ fontSize: '0.65rem', color: onlineIds.has(partner?.id) ? '#10b981' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {onlineIds.has(partner?.id) ? 'Online' : 'Offline'}
-                </span>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button onClick={() => navigate('/messages')} className="btn-ghost" style={{ width: '38px', height: '38px', padding: 0, borderRadius: '12px', minWidth: '38px' }}>
+                <ArrowLeft size={20} />
+              </button>
+              <div className="chat-page__avatar">
+                {partner?.profile_pic ? (
+                  <img src={partner.profile_pic} alt={partner?.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ color: '#0a0a0a', fontWeight: 800 }}>{partner?.name?.charAt(0) || 'U'}</span>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <h3 className="chat-page__name" style={{ fontSize: '1rem' }}>{partner?.name || 'Loading...'}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ 
+                    width: '6px', 
+                    height: '6px', 
+                    borderRadius: '50%', 
+                    background: onlineIds.has(partner?.id) ? '#10b981' : '#4b5563',
+                    boxShadow: onlineIds.has(partner?.id) ? '0 0 6px rgba(16, 185, 129, 0.4)' : 'none'
+                  }} />
+                  <span style={{ fontSize: '0.65rem', color: onlineIds.has(partner?.id) ? '#10b981' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {onlineIds.has(partner?.id) ? 'Online' : 'Offline'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div ref={scrollRef} className="chat-page__messages hide-scrollbar" style={{ padding: '1.5rem', gap: '0.6rem' }}>
-          {loading ? (
+          {errorMessage ? (
+            <div className="messages-empty" style={{ padding: '4rem 1rem' }}>
+              <h2 style={{ fontSize: '1.4rem', color: '#ff4444' }}>Oops!</h2>
+              <p>{errorMessage}</p>
+              <button onClick={() => navigate('/messages')} className="btn-primary" style={{ marginTop: '1.5rem' }}>
+                Back to Messages
+              </button>
+            </div>
+          ) : loading ? (
             <div className="messages-loading" style={{ height: '100%' }}>
               <div className="loader-ring" />
               <p>Fetching conversation...</p>

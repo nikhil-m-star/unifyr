@@ -4,13 +4,21 @@ const notificationService = require('../services/notificationService');
 const getSessionMessages = async (req, res) => {
   try {
     const sessionId = Number(req.params.sessionId);
+    
+    if (isNaN(sessionId)) {
+      console.warn(`[Chat] Invalid session ID requested: ${req.params.sessionId} by user ${req.dbUser.id}`);
+      return res.status(400).json({ message: 'Invalid session ID' });
+    }
+
     const session = await chatModel.getChatSessionById(sessionId);
 
     if (!session) {
+      console.warn(`[Chat] Session ${sessionId} not found by user ${req.dbUser.id}`);
       return res.status(404).json({ message: 'Chat session not found' });
     }
 
     if (![session.user_1_id, session.user_2_id].includes(req.dbUser.id)) {
+      console.warn(`[Chat] Unauthorized access attempt for session ${sessionId} by user ${req.dbUser.id}`);
       return res.status(403).json({ message: 'You are not part of this chat session' });
     }
 

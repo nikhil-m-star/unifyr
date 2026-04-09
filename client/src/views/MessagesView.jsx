@@ -31,7 +31,7 @@ const MessagesView = () => {
 
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(fetchSessions, 30000);
+    const interval = setInterval(fetchSessions, 10000); 
     return () => clearInterval(interval);
   }, [getToken]);
 
@@ -80,7 +80,7 @@ const MessagesView = () => {
   }
 
   return (
-    <div className="market-shell">
+    <div className="market-shell" style={{ paddingBottom: '100px' }}>
       <motion.div
         initial={isMobile ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -91,87 +91,108 @@ const MessagesView = () => {
 
       {sessions.length > 0 ? (
         <div className="messages-list">
-          {sessions.map((session, index) => (
-            <motion.div
-              key={session.id}
-              initial={isMobile ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.04 }}
-            >
-              <GlassCard
-                className="message-item"
-                role="button"
-                tabIndex={0}
-                style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/messages/${session.id}`, {
-                  state: {
-                    partner: {
-                      id: session.partner_id,
-                      name: session.partner_name,
-                      profile_pic: session.partner_profile_pic,
-                      role: session.partner_role,
-                    },
-                  },
-                })}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    navigate(`/messages/${session.id}`, {
-                      state: {
-                        partner: {
-                          id: session.partner_id,
-                          name: session.partner_name,
-                          profile_pic: session.partner_profile_pic,
-                          role: session.partner_role,
-                        },
-                      },
-                    });
-                  }
-                }}
+          {sessions.map((session, index) => {
+            const hasUnread = Number(session.unread_count) > 0;
+            return (
+              <motion.div
+                key={session.id}
+                initial={isMobile ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.04 }}
               >
-                <div className="msg-avatar-wrap">
-                  <div className="msg-avatar">
-                    {session.partner_profile_pic ? (
-                      <img src={session.partner_profile_pic} alt={session.partner_name} />
-                    ) : (
-                      <span>{session.partner_name?.charAt(0) || 'U'}</span>
+                <GlassCard
+                  className={`message-item ${hasUnread ? 'message-item--unread' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  style={{ 
+                    cursor: 'pointer',
+                    position: 'relative',
+                    borderLeft: hasUnread ? '3px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.08)'
+                  }}
+                  onClick={() => navigate(`/messages/${session.id}`, {
+                    state: {
+                      partner: {
+                        id: session.partner_id,
+                        name: session.partner_name,
+                        profile_pic: session.partner_profile_pic,
+                        role: session.partner_role,
+                      },
+                    },
+                  })}
+                >
+                  <div className="msg-avatar-wrap">
+                    <div className="msg-avatar" style={{ 
+                      border: hasUnread ? '2px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.08)' 
+                    }}>
+                      {session.partner_profile_pic ? (
+                        <img src={session.partner_profile_pic} alt={session.partner_name} />
+                      ) : (
+                        <span>{session.partner_name?.charAt(0) || 'U'}</span>
+                      )}
+                    </div>
+                    {hasUnread && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-4px',
+                        right: '-4px',
+                        background: '#ff4444',
+                        color: '#fff',
+                        borderRadius: '10px',
+                        minWidth: '20px',
+                        height: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        boxShadow: '0 2px 8px rgba(255, 68, 68, 0.4)',
+                        padding: '0 6px',
+                        zIndex: 2
+                      }}>
+                        {session.unread_count}
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <div className="msg-content">
-                  <div className="msg-top-row">
-                    <h3 className="msg-name">{session.partner_name}</h3>
-                    <span className="msg-time">
-                      <Clock size={11} />
-                      {formatTime(session.last_message_at || session.created_at)}
-                    </span>
+                  <div className="msg-content">
+                    <div className="msg-top-row">
+                      <h3 className="msg-name" style={{ fontWeight: hasUnread ? 800 : 700 }}>
+                        {session.partner_name}
+                      </h3>
+                      <span className="msg-time">
+                        <Clock size={11} />
+                        {formatTime(session.last_message_at || session.created_at)}
+                      </span>
+                    </div>
+
+                    <div className="msg-topic" style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--accent-secondary)' }}>
+                      {session.topic || 'Chat'}
+                    </div>
+
+                    <p className="msg-preview" style={{
+                      fontWeight: hasUnread ? 600 : 400,
+                      color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      fontStyle: session.last_message_content ? 'normal' : 'italic',
+                    }}>
+                      {session.last_message_content || 'No messages yet — start the conversation!'}
+                    </p>
                   </div>
 
-                  <div className="msg-topic">{session.topic || 'Chat'}</div>
-
-                  <p className="msg-preview" style={{
-                    fontWeight: session.last_message_content ? 500 : 400,
-                    fontStyle: session.last_message_content ? 'normal' : 'italic',
-                  }}>
-                    {session.last_message_content || 'No messages yet — start the conversation!'}
-                  </p>
-                </div>
-
-                <div className="msg-thread-item__actions">
-                  <button
-                    type="button"
-                    className="msg-delete-btn"
-                    onClick={(event) => handleDeleteSession(event, session.id)}
-                    disabled={deletingSessionId === session.id}
-                    aria-label="Delete chat"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </GlassCard>
-            </motion.div>
-          ))}
+                  <div className="msg-thread-item__actions">
+                    <button
+                      type="button"
+                      className="msg-delete-btn"
+                      onClick={(event) => handleDeleteSession(event, session.id)}
+                      disabled={deletingSessionId === session.id}
+                      aria-label="Delete chat"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </GlassCard>
+              </motion.div>
+            );
+          })}
         </div>
       ) : (
         <div className="messages-empty">

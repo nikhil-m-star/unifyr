@@ -5,17 +5,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Send, Trash2 } from 'lucide-react';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
+import { useNotifications } from '../context/NotificationContext';
 
-const mapMessage = (entry, myUserId) => ({
-  id: entry.id,
-  text: entry.content,
-  senderId: entry.sender_id,
-  senderName: entry.sender_name,
-  timestamp: entry.created_at,
-  isOwn: Number(entry.sender_id) === Number(myUserId),
-  isRead: entry.is_read,
-  status: 'sent',
-});
+const mapMessage = (entry, myUserId) => {
+  const isOwn = Number(entry.sender_id) === Number(myUserId);
+  return {
+    id: entry.id,
+    text: entry.content,
+    senderId: entry.sender_id,
+    senderName: entry.sender_name,
+    timestamp: entry.created_at,
+    isOwn,
+    isRead: entry.is_read,
+    status: 'sent',
+  };
+};
 
 const ChatSessionView = ({ socket }) => {
   const { sessionId: sessionIdParam } = useParams();
@@ -24,6 +28,7 @@ const ChatSessionView = ({ socket }) => {
   const location = useLocation();
   const { getToken, user: clerkUser } = useAuth();
   const isMobile = useIsMobile();
+  const { markNotificationRead, notifications } = useNotifications();
 
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -38,6 +43,16 @@ const ChatSessionView = ({ socket }) => {
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const lastTypingEmitRef = useRef(0);
+
+  // Clear relevant notifications on mount
+  useEffect(() => {
+    if (!sessionId) return;
+    notifications.forEach(n => {
+      if (n.type === 'new_message' && Number(n.sessionId) === sessionId && !n.read) {
+        markNotificationRead(n.id);
+      }
+    });
+  }, [sessionId, notifications, markNotificationRead]);
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior = 'smooth') => {
@@ -77,7 +92,8 @@ const ChatSessionView = ({ socket }) => {
 
         if (!mounted) return;
 
-        const meId = meRes.data?.user?.id;
+        // More robust user ID detection
+        const meId = meRes.data?.user?.id || meRes.data?.id;
         setMyUserId(meId);
 
         const sessionsList = Array.isArray(sessionsRes.data?.sessions) ? sessionsRes.data.sessions : [];
@@ -137,12 +153,11 @@ const ChatSessionView = ({ socket }) => {
         return [...current, mapped];
       });
 
-      // Automatically emit seen for incoming messages if chat is active
       if (!mapped.isOwn) {
         socket.emit('chat:seen', { sessionId });
         setIsPartnerTyping(false);
       } else {
-        setIsPartnerSeen(false); // Reset seen for your new message
+        setIsPartnerSeen(false);
       }
     };
 
@@ -187,10 +202,9 @@ const ChatSessionView = ({ socket }) => {
     };
 
     setMessages(prev => [...prev, optimisticMsg]);
-    setIsPartnerSeen(false); // New message hasn't been seen yet
+    setIsPartnerSeen(false);
     socket.emit('chat:send', { sessionId, content: trimmedMessage });
     
-    // Stop typing immediately on send
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       socket.emit('chat:typing', { sessionId, isTyping: false });
@@ -205,14 +219,12 @@ const ChatSessionView = ({ socket }) => {
 
     if (!socket || !sessionId) return;
 
-    // Emit typing start if not already emitted recently
     const now = Date.now();
     if (now - lastTypingEmitRef.current > 2000) {
       socket.emit('chat:typing', { sessionId, isTyping: true });
       lastTypingEmitRef.current = now;
     }
 
-    // Debounce typing stop
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('chat:typing', { sessionId, isTyping: false });
@@ -297,14 +309,15 @@ const ChatSessionView = ({ socket }) => {
                         padding: '11px 16px',
                         borderRadius: msg.isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                         background: msg.isOwn
-                          ? 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)'
-                          : 'rgba(255, 255, 255, 0.07)',
-                        color: msg.isOwn ? '#000' : 'var(--text-primary)',
-                        border: msg.isOwn ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                          ? '#ffffff'
+                          : 'rgba(255, 255, 255, 0.08)',
+                        color: msg.isOwn ? '#000000' : '#ffffff',
+                        border: msg.isOwn ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
                         boxShadow: msg.isOwn ? '0 4px 15px rgba(0, 0, 0, 0.2)' : 'none',
                         fontSize: '0.94rem',
                         lineHeight: 1.5,
-                        wordBreak: 'break-word'
+                        wordBreak: 'break-word',
+                        fontWeight: 500
                       }}
                     >
                       {msg.text}
@@ -396,7 +409,7 @@ const ChatSessionView = ({ socket }) => {
       </div>
       <style>
         {`
-          .motion-div:hover .msg-delete-hover { opacity: 1 !important; }
+          .chat-page__messages:hover .msg-delete-hover { opacity: 1 !important; }
           .typing-indicator { display: flex; gap: 3px; }
           .typing-indicator span { width: 5px; height: 5px; background: currentColor; border-radius: 50%; display: inline-block; animation: typing-bounce 1.4s infinite ease-in-out both; }
           .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }

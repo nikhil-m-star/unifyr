@@ -127,7 +127,8 @@ const getUserChatSessions = async (userId) => {
         ELSE u1.role
       END AS partner_role,
       last_msg.content AS last_message_content,
-      last_msg.created_at AS last_message_at
+      last_msg.created_at AS last_message_at,
+      COALESCE(unread.count, 0) AS unread_count
     FROM chat_sessions cs
     JOIN users u1 ON u1.id = cs.user_1_id
     JOIN users u2 ON u2.id = cs.user_2_id
@@ -138,6 +139,12 @@ const getUserChatSessions = async (userId) => {
       ORDER BY created_at DESC
       LIMIT 1
     ) last_msg ON TRUE
+    LEFT JOIN (
+      SELECT session_id, COUNT(*) as count
+      FROM messages
+      WHERE is_read = FALSE AND sender_id != $1
+      GROUP BY session_id
+    ) unread ON unread.session_id = cs.id
     WHERE cs.user_1_id = $1 OR cs.user_2_id = $1
     ORDER BY COALESCE(last_msg.created_at, cs.created_at) DESC
   `;

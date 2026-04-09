@@ -117,6 +117,12 @@ img {
   margin: 0 auto;
 }
 
+.app-container--immersive {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
 /* ─── Top Navigation ─── */
 
 .top-nav {
@@ -376,6 +382,13 @@ img {
 
 .market-shell {
   padding: 20px 0 60px;
+}
+
+.market-shell--immersive {
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .auth-shell {
@@ -2211,6 +2224,7 @@ img {
   font-size: 0.74rem;
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

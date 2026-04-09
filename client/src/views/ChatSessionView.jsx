@@ -416,8 +416,8 @@ const ChatSessionView = ({ socket }) => {
   };
 
   return (
-    <div className="market-shell" style={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-      <div className="chat-page" style={{ flex: 1, height: '100%', borderRadius: isMobile ? '0' : '24px' }}>
+    <div className="market-shell--immersive">
+      <div className="chat-page" style={{ flex: 1, height: '100%', borderRadius: isMobile ? '0' : '24px', overflow: 'hidden' }}>
         <div className="chat-page__header">
           {errorMessage ? (
             <div style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '14px' }}>

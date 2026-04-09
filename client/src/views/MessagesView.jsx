@@ -119,7 +119,7 @@ const MessagesView = () => {
   }
 
   return (
-    <div className="market-shell" style={{ paddingBottom: '100px' }}>
+    <div className="market-shell--immersive">
       <motion.div
         initial={isMobile ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

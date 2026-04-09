@@ -91,6 +91,8 @@ const AppContent = () => {
   const isMobile = useIsMobile();
   const { addNotification, markNotificationRead, unreadCount, unreadMessageCount } = useNotifications();
   const isChatSessionRoute = location.pathname.startsWith('/messages/');
+  const isMessagesHubRoute = location.pathname === '/messages';
+  const isImmersiveRoute = isChatSessionRoute || isMessagesHubRoute;
   const hideNavbarForMobileChat = isMobile && isChatSessionRoute;
 
   useEffect(() => {
@@ -257,7 +259,9 @@ const AppContent = () => {
           unreadMessageCount={unreadMessageCount}
         />
       )}
-      <main className={`app-container${hideNavbarForMobileChat ? ' app-container--chat-mobile' : ''}`}>
+      <main className={`app-container${
+        isImmersiveRoute ? ' app-container--immersive' : ''
+      }${hideNavbarForMobileChat ? ' app-container--chat-mobile' : ''}`}>
         <Routes>
           <Route path="/" element={<HomeView refreshToken={homeRefreshToken} />} />
           <Route path="/auth/*" element={<AuthView />} />

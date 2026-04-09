@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Radar as RadarIcon, Users, MessageSquare, X, Zap, Globe, ShieldCheck } from 'lucide-react';
+import { Radar as RadarIcon, Users, MessageSquare, X, Zap, Loader2, ShieldCheck } from 'lucide-react';
 import axios, { API_ORIGIN } from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -34,15 +34,20 @@ const RadarView = () => {
         socketRef.current = socket;
 
         socket.on('match_success', ({ sessionId: matchedSessionId, partner: matchedPartner }) => {
+          console.log('[Radar] Match success:', matchedSessionId);
           setPartner(matchedPartner || null);
           setSessionId(matchedSessionId || null);
           setStatus('matched');
         });
 
         socket.on('queue_error', ({ message }) => {
-          setStatus('idle');
           console.error('[Radar] Queue error:', message);
+          setStatus('idle');
+          window.alert(message || 'Unable to join matchmaking queue.');
         });
+        
+        socket.on('connect', () => console.log('[Radar] Socket connected'));
+        socket.on('disconnect', () => console.log('[Radar] Socket disconnected'));
       } catch (error) {
         console.error('Failed to connect matchmaking socket:', error);
       }
@@ -87,12 +92,17 @@ const RadarView = () => {
   }, [getToken, isSignedIn]);
 
   const startMatch = () => {
-    if (!socketRef.current) return;
+    console.log('[Radar] Starting scan...');
+    if (!socketRef.current) {
+        console.warn('[Radar] Socket not initialized');
+        return;
+    }
     setStatus('waiting');
     socketRef.current.emit('join_queue', { topicKeywords: 'random' });
   };
 
   const cancelMatch = () => {
+    console.log('[Radar] Canceling scan...');
     socketRef.current?.emit('leave_queue');
     setStatus('idle');
     setPartner(null);
@@ -118,31 +128,28 @@ const RadarView = () => {
       minHeight: 'calc(100vh - 100px)', 
       display: 'flex', 
       flexDirection: 'column',
-      paddingBottom: '2rem'
+      paddingBottom: '2rem',
+      background: 'radial-gradient(circle at 50% 50%, rgba(15, 15, 15, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div className="app-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <AnimatePresence mode="wait">
+      <div className="app-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', zIndex: 10 }}>
+        <AnimatePresence>
           {status === 'idle' && (
             <motion.div
               key="idle"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
               className="radar-content-box"
               style={{ width: '100%', maxWidth: '900px', marginInline: 'auto' }}
             >
               <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
                 <div className="section-head" style={{ justifyContent: 'center', marginBottom: '1.5rem' }}>
-                  <motion.span 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="section-kicker" 
-                    style={{ background: 'rgba(255,255,255,0.08)', padding: '8px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
-                  >
+                  <span className="section-kicker" style={{ background: 'rgba(255,255,255,0.08)', padding: '8px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}>
                     <Zap size={14} style={{ color: '#fbbf24', fill: '#fbbf24' }} /> SOCIAL RADAR
-                  </motion.span>
+                  </span>
                 </div>
                 
                 <h1 className="page-title" style={{ fontSize: isMobile ? '2.4rem' : '4rem', marginBottom: '1.5rem', letterSpacing: '-0.05em', fontWeight: 900 }}>
@@ -221,9 +228,10 @@ const RadarView = () => {
               initial={{ opacity: 0, scale: 0.9 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 1.1 }}
+              transition={{ duration: 0.4 }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '500px' }}
             >
-              <div className="radar-hud-container">
+              <div className="radar-hud-container" style={{ transform: `scale(${isMobile ? 0.8 : 1.1})` }}>
                 <div className="radar-hud-scanner"></div>
                 <div className="radar-hud-grid"></div>
                 <div className="radar-hud-rings">
@@ -233,9 +241,8 @@ const RadarView = () => {
                   <RadarIcon size={48} color="white" strokeWidth={1.5} />
                 </div>
                 
-                {/* Dynamic HUD decorators */}
-                <div className="hud-deco hud-deco--tl">SCAN_V1.0.4</div>
-                <div className="hud-deco hud-deco--tr">SRCH_ACTIVE</div>
+                <div className="hud-deco hud-deco--tl">SCAN_V1.1</div>
+                <div className="hud-deco hud-deco--tr">SEARCH_ACTIVE</div>
                 <div className="hud-deco hud-deco--bl">{totalActiveCount} NODES</div>
                 <div className="hud-deco hud-deco--br">CH_RANDOM</div>
               </div>
@@ -266,6 +273,7 @@ const RadarView = () => {
               key="matched" 
               initial={{ opacity: 0, scale: 0.85 }} 
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.1 }}
               transition={{ type: 'spring', damping: 22, stiffness: 300 }}
               className="matched-card-success"
               style={{ width: '100%', maxWidth: '520px', marginInline: 'auto' }}
@@ -313,7 +321,7 @@ const RadarView = () => {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <button type="button" className="btn-primary" onClick={openChat} style={{ padding: '18px', borderRadius: '20px', fontSize: '1.1rem', fontWeight: 800, width: '100%' }}>
-                    <MessageSquare size={20} style={{ marginRight: '10px' }} /> Say Hello
+                    <MessageSquare size={20} style={{ marginRight: '8px' }} /> Say Hello
                   </button>
                   <button type="button" className="btn-ghost" onClick={() => setStatus('idle')} style={{ padding: '16px', borderRadius: '20px', fontWeight: 700, width: '100%', border: 'none' }}>
                     Keep Scanning
@@ -327,9 +335,8 @@ const RadarView = () => {
 
       <style>
         {`
-          .radar-page-wrapper { background: radial-gradient(circle at 50% 50%, rgba(20, 20, 20, 1) 0%, rgba(0, 0, 0, 1) 100%); }
           .text-glow { text-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
-          .radar-hud-container { position: relative; width: 320px; height: 320px; display: flex; align-items: center; justify-content: center; transform: scale(${isMobile ? 0.85 : 1.1}); }
+          .radar-hud-container { position: relative; width: 320px; height: 320px; display: flex; align-items: center; justify-content: center; }
           .radar-hud-scanner { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.1); background: conic-gradient(from 0deg, rgba(255, 255, 255, 0.25) 0deg, transparent 120deg); animation: rotate-hud 3.5s linear infinite; z-index: 3; }
           .radar-hud-grid { position: absolute; inset: 20px; border-radius: 50%; background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px); background-size: 20px 20px; opacity: 0.3; pointer-events: none; }
           .radar-hud-rings span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 50%; }
@@ -349,7 +356,6 @@ const RadarView = () => {
           
           @keyframes rotate-hud { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
           @keyframes text-pulse { 0% { opacity: 1; text-shadow: 0 0 0px #fff; } 50% { opacity: 0.7; text-shadow: 0 0 15px rgba(255,255,255,0.3); } 100% { opacity: 1; text-shadow: 0 0 0px #fff; } }
-          @keyframes icon-pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
           
           .animate-spin { animation: spin 1.5s linear infinite; }
           @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

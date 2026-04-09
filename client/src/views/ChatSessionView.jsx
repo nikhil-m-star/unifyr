@@ -42,10 +42,16 @@ const ChatSessionView = ({ socket }) => {
   const [roomJoined, setRoomJoined] = useState(false);
   const [sendError, setSendError] = useState(null);
   
+  // Keep ref in sync for socket handlers
+  useEffect(() => {
+    myUserIdRef.current = myUserId;
+  }, [myUserId]);
+  
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const lastTypingEmitRef = useRef(0);
+  const myUserIdRef = useRef(null);
 
   // Diagnostic Logs
   useEffect(() => {
@@ -160,7 +166,7 @@ const ChatSessionView = ({ socket }) => {
       
       if (msgSessionId === sessionId) {
         setMessages((prev) => {
-          const mapped = mapMessage(newMessage, myUserId);
+          const mapped = mapMessage(newMessage, myUserIdRef.current);
           
           // 1. Check if we already have this real ID
           if (prev.some(m => m.id === mapped.id)) {
@@ -194,7 +200,7 @@ const ChatSessionView = ({ socket }) => {
       socket.off('chat:error', handleSendError);
       socket.off('notification:message', handleOfflineNotification);
     };
-  }, [socket, sessionId, myUserId]);
+  }, [socket, sessionId]);
 
   useEffect(() => {
     if (!sessionId) return;

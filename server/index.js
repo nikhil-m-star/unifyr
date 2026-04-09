@@ -135,7 +135,12 @@ app.use((err, req, res, next) => {
   const message = process.env.NODE_ENV === 'production'
     ? (status < 500 ? err.message : 'Internal server error')
     : (err.message || 'Internal server error');
-  res.status(status).json({ message });
+  const details = err.details;
+  
+  res.status(status).json({ 
+    message,
+    ...(details ? { details } : {})
+  });
 });
 
 server.listen(PORT, () => {

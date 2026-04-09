@@ -41,20 +41,24 @@ const syncUserFromClerk = async (clerkId, claims = {}) => {
     throw new Error('Clerk user ID is required');
   }
 
+  console.log(`[Sync] Starting sync cycle for Clerk ID: ${clerkId}`);
+
   const existingUser = await userModel.getUserByClerkId(clerkId);
 
   let profile = getProfileFromClaims(claims);
   const shouldHydrateFromClerk = !existingUser || !profile.email || !profile.name || !profile.profilePic;
 
   if (shouldHydrateFromClerk) {
+    console.log(`[Sync] Insufficient claims. Hydrating from Clerk API...`);
     try {
       const clerkUser = await clerkClient.users.getUser(clerkId);
       profile = {
         ...profile,
         ...getProfileFromClerkUser(clerkUser),
       };
+      console.log(`[Sync] Clerk hydration successful for ${profile.email}`);
     } catch (error) {
-      console.warn(`Unable to hydrate Clerk profile for ${clerkId}: ${error.message}`);
+      console.warn(`[Sync] Unable to hydrate Clerk profile for ${clerkId}: ${error.message}`);
     }
   }
 
@@ -75,13 +79,21 @@ const syncUserFromClerk = async (clerkId, claims = {}) => {
 
   const role = isAdminEmail(normalizedEmail) ? 'admin' : (existingUser?.role || 'student');
 
-  return userModel.createUser(
-    clerkId,
-    profile.name || existingUser?.name || 'User',
-    normalizedEmail,
-    profile.profilePic || existingUser?.profile_pic || '',
-    role
-  );
+  console.log(`[Sync] Attempting DB upsert for ${clerkId} with email ${normalizedEmail}. Role: ${role}`);
+  try {
+    const syncedUser = await userModel.createUser(
+      clerkId,
+      profile.name || existingUser?.name || 'User',
+      normalizedEmail,
+      profile.profilePic || existingUser?.profile_pic || '',
+      role
+    );
+    console.log(`[Sync] DB sync successful. DB ID: ${syncedUser?.id}`);
+    return syncedUser;
+  } catch (error) {
+    console.error(`[Sync] DB upsert failed for ${clerkId}: ${error.message}`);
+    throw error;
+  }
 };
 
 module.exports = {

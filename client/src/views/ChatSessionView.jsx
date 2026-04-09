@@ -169,22 +169,25 @@ const ChatSessionView = ({ socket }) => {
         setMessages((prev) => {
           const mapped = mapMessage(newMessage, myUserIdRef.current);
           
-          // 1. Check if we already have this real ID
+          // 1. Check if we already have this real ID to prevent duplicates
           if (prev.some(m => m.id === mapped.id)) {
             return prev;
           }
 
-          // 2. If it's our own message, find and replace the pending one
-          if (mapped.isOwn) {
-            const pendingIndex = prev.findIndex(m => m.status === 'pending' && m.text === mapped.text);
-            if (pendingIndex !== -1) {
-              const next = [...prev];
-              next[pendingIndex] = mapped;
-              return next;
-            }
+          // 2. See if we have an optimistic pending message that matches the text
+          // If we find one, we absolutely know 'we' sent this, so we force replace it.
+          const pendingIndex = prev.findIndex(
+            m => m.status === 'pending' && (m.text === mapped.text || m.text === newMessage.content)
+          );
+          
+          if (pendingIndex !== -1) {
+            const next = [...prev];
+            mapped.isOwn = true; // Force true because we matched it to our pending queue
+            next[pendingIndex] = mapped;
+            return next;
           }
           
-          // 3. Otherwise append
+          // 3. Otherwise append as normal
           return [...prev, mapped];
         });
       }

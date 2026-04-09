@@ -2,7 +2,7 @@ const { clerkClient } = require('@clerk/express');
 const userModel = require('../models/userModel');
 
 const getFallbackEmail = (clerkId) => `${clerkId}@users.unifyr.local`;
-const adminEmails = (process.env.ADMIN_EMAILS || 'nikhilm.cs24@bmsce.ac.in')
+const adminEmails = (process.env.ADMIN_EMAILS || 'nikhilm.cs24@bmsce.ac.in, nikhilm9110@gmail.com')
   .split(',')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);

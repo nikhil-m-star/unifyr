@@ -152,6 +152,24 @@ const getUserChatSessions = async (userId) => {
   return rows;
 };
 
+const deleteOldChatSessions = async (days = 5) => {
+  const query = `
+    DELETE FROM chat_sessions
+    WHERE created_at < NOW() - INTERVAL '1 day' * $1
+    RETURNING id
+  `;
+  const { rows } = await pool.query(query, [days]);
+  return rows;
+};
+
+const deleteExpiredOfflineMessages = async () => {
+  const query = `
+    DELETE FROM offline_messages
+    WHERE delivered_at IS NOT NULL AND delivered_at < NOW() - INTERVAL '1 day'
+  `;
+  await pool.query(query);
+};
+
 module.exports = {
   createChatSession,
   getChatSessionById,
@@ -163,4 +181,6 @@ module.exports = {
   deleteMessageById,
   deleteChatSessionById,
   getUserChatSessions,
+  deleteOldChatSessions,
+  deleteExpiredOfflineMessages,
 };

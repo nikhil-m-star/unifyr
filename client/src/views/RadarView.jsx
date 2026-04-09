@@ -7,6 +7,7 @@ import { Radar as RadarIcon, Users, MessageSquare, X, Zap, Loader2, ShieldCheck 
 import axios, { API_ORIGIN } from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { toast } from 'react-hot-toast';
 
 const RadarView = () => {
   const [status, setStatus] = useState('idle'); // idle, waiting, matched
@@ -43,7 +44,7 @@ const RadarView = () => {
         socket.on('queue_error', ({ message }) => {
           console.error('[Radar] Queue error:', message);
           setStatus('idle');
-          window.alert(message || 'Unable to join matchmaking queue.');
+          toast.error(message || 'Unable to join matchmaking queue.');
         });
         
         socket.on('connect', () => console.log('[Radar] Socket connected'));

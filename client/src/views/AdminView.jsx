@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import axios from '../api/axios';
+import { toast } from 'react-hot-toast';
+import { Trash2 } from 'lucide-react';
 
 const AdminView = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -17,6 +19,7 @@ const AdminView = () => {
     imageUrl: '',
     description: '',
   });
+  const [feedback, setFeedback] = useState([]);
   const { getToken } = useAuth();
 
   const fetchOverview = async () => {
@@ -50,8 +53,19 @@ const AdminView = () => {
     }
   };
 
+  const fetchFeedback = async () => {
+    try {
+      const token = await getToken();
+      const res = await axios.get('/feedback', { headers: { Authorization: `Bearer ${token}` } });
+      setFeedback(Array.isArray(res.data?.feedback) ? res.data.feedback : []);
+    } catch (error) {
+      console.error('Failed to fetch feedback:', error);
+    }
+  };
+
   useEffect(() => {
     fetchOverview();
+    fetchFeedback();
   }, [getToken]);
 
   const stats = useMemo(
@@ -59,8 +73,9 @@ const AdminView = () => {
       users: users.length,
       teams: teams.length,
       events: events.length,
+      feedback: feedback.length,
     }),
-    [users, teams, events]
+    [users, teams, events, feedback]
   );
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -132,7 +147,7 @@ const AdminView = () => {
       setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, role } : user)));
     } catch (error) {
       console.error('Failed to update user role:', error);
-      window.alert('Failed to update user role.');
+      toast.error('Failed to update user role.');
     }
   };
 
@@ -148,10 +163,10 @@ const AdminView = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      window.alert('Team updated.');
+      toast.success('Team updated.');
     } catch (error) {
       console.error('Failed to update team:', error);
-      window.alert('Failed to update team.');
+      toast.error('Failed to update team.');
     }
   };
 
@@ -165,7 +180,7 @@ const AdminView = () => {
       setTeams((prev) => prev.filter((team) => team.id !== id));
     } catch (error) {
       console.error('Failed to delete team:', error);
-      window.alert('Failed to delete team.');
+      toast.error('Failed to delete team.');
     }
   };
 
@@ -181,10 +196,10 @@ const AdminView = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      window.alert('Event updated.');
+      toast.success('Event updated.');
     } catch (error) {
       console.error('Failed to update event:', error);
-      window.alert('Failed to update event.');
+      toast.error('Failed to update event.');
     }
   };
 
@@ -198,13 +213,13 @@ const AdminView = () => {
       setEvents((prev) => prev.filter((event) => event.id !== id));
     } catch (error) {
       console.error('Failed to delete event:', error);
-      window.alert('Failed to delete event.');
+      toast.error('Failed to delete event.');
     }
   };
 
   const createEvent = async () => {
     if (!newEvent.title.trim()) {
-      window.alert('Event title is required.');
+      toast.error('Event title is required.');
       return;
     }
 
@@ -228,7 +243,7 @@ const AdminView = () => {
       setActiveTab('events');
     } catch (error) {
       console.error('Failed to create event:', error);
-      window.alert('Failed to create event.');
+      toast.error('Failed to create event.');
     }
   };
 
@@ -276,6 +291,10 @@ const AdminView = () => {
             <strong>{stats.events}</strong>
             <p>Featured Events</p>
           </div>
+          <div className="surface-card admin-stat-card">
+            <strong>{stats.feedback}</strong>
+            <p>Feedback</p>
+          </div>
         </div>
 
         <div className="admin-controls">
@@ -285,6 +304,7 @@ const AdminView = () => {
               { id: 'users', label: 'Users' },
               { id: 'teams', label: 'Teams' },
               { id: 'events', label: 'Events' },
+              { id: 'feedback', label: 'Feedback' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -490,6 +510,56 @@ const AdminView = () => {
               </div>
             ))}
             {filteredEvents.length === 0 && <div className="empty-state">No events match your search.</div>}
+          </div>
+        </section>
+      )}
+
+      {activeTab === 'feedback' && (
+        <section className="feed-section">
+          <div className="section-head">
+            <span className="section-kicker">User Feedback</span>
+            <button type="button" className="btn-secondary" onClick={fetchFeedback}>Refresh</button>
+          </div>
+          <div className="event-groups">
+            {feedback.length === 0 && <div className="empty-state">No feedback submitted yet.</div>}
+            {feedback.map((item) => (
+              <div key={item.id} className="surface-card admin-edit-card" style={{ position: 'relative' }}>
+                <div className="admin-row" style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {item.profile_pic ? (
+                      <img src={item.profile_pic} alt={item.user_name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem' }}>
+                        {item.user_name?.charAt(0) || '?'}
+                      </div>
+                    )}
+                    <div>
+                      <div className="admin-primary-text">{item.user_name}</div>
+                      <div className="admin-secondary-text">{item.role} · {new Date(item.created_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    style={{ color: '#ff4444', padding: '6px' }}
+                    onClick={async () => {
+                      if (!window.confirm('Delete this feedback?')) return;
+                      try {
+                        const token = await getToken();
+                        await axios.delete(`/feedback/${item.id}`, { headers: { Authorization: `Bearer ${token}` } });
+                        setFeedback(prev => prev.filter(f => f.id !== item.id));
+                        toast.success('Feedback deleted.');
+                      } catch (err) {
+                        toast.error('Failed to delete feedback.');
+                      }
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{item.content}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}

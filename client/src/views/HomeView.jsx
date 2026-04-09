@@ -9,6 +9,8 @@ import CreateTeamModal from '../components/common/CreateTeamModal';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
 import { groupTeamsByEvent } from '../lib/groupTeams';
+import { toast } from 'react-hot-toast';
+import { MessageCircle } from 'lucide-react';
 
 const normalizeName = (value = '') =>
   value
@@ -133,11 +135,14 @@ const HomeView = ({ refreshToken = 0 }) => {
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
   const carouselRef = useRef(null);
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -275,6 +280,63 @@ const HomeView = ({ refreshToken = 0 }) => {
         >
           Post Recruitment
         </button>
+      </div>
+
+      {/* Feedback Section */}
+      <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        {!feedbackOpen ? (
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}
+            onClick={() => {
+              if (!isSignedIn) { navigate('/auth'); return; }
+              setFeedbackOpen(true);
+            }}
+          >
+            <MessageCircle size={16} />
+            Share Feedback
+          </button>
+        ) : (
+          <div style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <textarea
+              className="glass-input"
+              placeholder="Tell us what you think about Unifyr..."
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value.slice(0, 1000))}
+              rows={3}
+              style={{ borderRadius: '14px', padding: '14px 18px', fontSize: '0.9rem', resize: 'vertical' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{feedbackText.length}/1000</span>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="button" className="btn-ghost" style={{ fontSize: '0.85rem' }} onClick={() => { setFeedbackOpen(false); setFeedbackText(''); }}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ padding: '10px 22px', borderRadius: '12px', fontSize: '0.85rem' }}
+                  disabled={!feedbackText.trim() || feedbackSubmitting}
+                  onClick={async () => {
+                    setFeedbackSubmitting(true);
+                    try {
+                      const token = await getToken();
+                      await axios.post('/feedback', { content: feedbackText.trim() }, { headers: { Authorization: `Bearer ${token}` } });
+                      toast.success('Thanks for your feedback!');
+                      setFeedbackText('');
+                      setFeedbackOpen(false);
+                    } catch (err) {
+                      toast.error(err?.response?.data?.message || 'Failed to submit feedback.');
+                    } finally {
+                      setFeedbackSubmitting(false);
+                    }
+                  }}
+                >
+                  {feedbackSubmitting ? 'Sending...' : 'Submit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.section>
   );

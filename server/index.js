@@ -83,7 +83,9 @@ const chatRoutes = require('./routes/chatRoutes');
 const utsavRoutes = require('./routes/utsavRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 const notificationService = require('./services/notificationService');
+const chatModel = require('./models/chatModel');
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -125,6 +127,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/utsav', utsavRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -137,6 +140,23 @@ app.use((err, req, res, next) => {
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+
+  // Cleanup old chat sessions (>5 days) and expired offline messages every 6 hours
+  const runCleanup = async () => {
+    try {
+      const deleted = await chatModel.deleteOldChatSessions(5);
+      await chatModel.deleteExpiredOfflineMessages();
+      if (deleted.length > 0) {
+        console.log(`[Cleanup] Removed ${deleted.length} chat session(s) older than 5 days.`);
+      }
+    } catch (err) {
+      console.error('[Cleanup] Error:', err.message);
+    }
+  };
+
+  // Run once on startup, then every 6 hours
+  runCleanup();
+  setInterval(runCleanup, 6 * 60 * 60 * 1000);
 });
 
 // Graceful Shutdown

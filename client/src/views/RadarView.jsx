@@ -69,7 +69,6 @@ const RadarView = () => {
         if (mounted) {
           const u = Array.isArray(response.data?.users) ? response.data.users : [];
           setActiveUsers(u);
-          // count is length of other users, so +1 for current user
           setTotalActiveCount((response.data?.count || 0) + 1);
         }
       } catch (error) {
@@ -171,7 +170,7 @@ const RadarView = () => {
 
                   <div style={{ marginTop: '4rem' }}>
                     <div className="section-kicker" style={{ justifyContent: 'center', marginBottom: '1.5rem', opacity: 0.8, fontSize: '0.9rem' }}>
-                      <Users size={14} /> <strong>{totalActiveCount}</strong> Students Online Website-Wide
+                      <Users size={14} /> <strong>{totalActiveCount}</strong> Students Currently Online
                     </div>
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>

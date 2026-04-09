@@ -93,7 +93,7 @@ const AppContent = () => {
   const isChatSessionRoute = location.pathname.startsWith('/messages/');
   const isMessagesHubRoute = location.pathname === '/messages';
   const isImmersiveRoute = isChatSessionRoute || isMessagesHubRoute;
-  const hideNavbarForMobileChat = isMobile && isChatSessionRoute;
+  const hideNavbar = isChatSessionRoute;
 
   useEffect(() => {
     const { title, description, robots } = seoConfigForPath(location.pathname);
@@ -252,7 +252,7 @@ const AppContent = () => {
 
   return (
     <div className="app-shell">
-      {!hideNavbarForMobileChat && (
+      {!hideNavbar && (
         <Navbar
           onTeamCreated={() => setHomeRefreshToken((value) => value + 1)}
           unreadNotificationCount={unreadCount}
@@ -261,7 +261,7 @@ const AppContent = () => {
       )}
       <main className={`app-container${
         isImmersiveRoute ? ' app-container--immersive' : ''
-      }${hideNavbarForMobileChat ? ' app-container--chat-mobile' : ''}`}>
+      }${hideNavbar ? ' app-container--chat-mobile' : ''}`}>
         <Routes>
           <Route path="/" element={<HomeView refreshToken={homeRefreshToken} />} />
           <Route path="/auth/*" element={<AuthView />} />

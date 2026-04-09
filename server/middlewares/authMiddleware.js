@@ -27,7 +27,7 @@ const syncUser = async (req, res, next) => {
     console.error(`[Auth] Sync failure for Clerk ID ${userId}:`, error.message, error.stack);
     res.status(500).json({ 
       message: 'Internal server error during user synchronization',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message
     });
   }
 };

@@ -40,8 +40,8 @@ const ChatSessionView = ({ socket }) => {
   const [partner, setPartner] = useState(location.state?.partner || null);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [isPartnerSeen, setIsPartnerSeen] = useState(false);
-  const [roomJoined, setRoomJoined] = useState(false);
   const [sendError, setSendError] = useState(null);
+  const [onlineIds, setOnlineIds] = useState(new Set());
   
   // Keep ref in sync for socket handlers
   useEffect(() => {
@@ -247,6 +247,10 @@ const ChatSessionView = ({ socket }) => {
         offlineMessages.forEach(msg => {
           console.log('[Chat] Offline notification received:', msg.sender_name);
         });
+
+        // Set initial online status
+        const activeUsers = meRes.data?.activeUsers || [];
+        setOnlineIds(new Set(activeUsers.map(u => u.id)));
         
         if (history.length > 0) {
           const lastOwnIdx = [...history].reverse().findIndex(m => m.isOwn);
@@ -264,10 +268,26 @@ const ChatSessionView = ({ socket }) => {
       }
     };
 
+    const fetchOnlineStatus = async () => {
+      try {
+        const token = await getToken();
+        const response = await axios.get('/users/active', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const ids = Array.isArray(response.data?.userIds) ? response.data.userIds : [];
+        if (mounted) setOnlineIds(new Set(ids));
+      } catch (error) {
+        console.error('Failed to fetch online presence:', error);
+      }
+    };
+
     load();
+    fetchOnlineStatus();
+    const interval = setInterval(fetchOnlineStatus, 15000);
 
     return () => {
       mounted = false;
+      clearInterval(interval);
     };
   }, [getToken, sessionId]);
 
@@ -387,7 +407,18 @@ const ChatSessionView = ({ socket }) => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <h3 className="chat-page__name" style={{ fontSize: '1rem' }}>{partner?.name || 'Loading...'}</h3>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{partner?.role || 'Online'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ 
+                  width: '6px', 
+                  height: '6px', 
+                  borderRadius: '50%', 
+                  background: onlineIds.has(partner?.id) ? '#10b981' : '#4b5563',
+                  boxShadow: onlineIds.has(partner?.id) ? '0 0 6px rgba(16, 185, 129, 0.4)' : 'none'
+                }} />
+                <span style={{ fontSize: '0.65rem', color: onlineIds.has(partner?.id) ? '#10b981' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {onlineIds.has(partner?.id) ? 'Online' : 'Offline'}
+                </span>
+              </div>
             </div>
           </div>
         </div>

@@ -152,7 +152,10 @@ const getUserChatSessions = async (userId) => {
   return rows;
 };
 
-const deleteOldChatSessions = async (days = 5) => {
+const deleteOldChatSessions = async (days = 30) => {
+  // Persistence enabled: No longer deleting old chat sessions by default.
+  return [];
+  /*
   const query = `
     DELETE FROM chat_sessions
     WHERE created_at < NOW() - INTERVAL '1 day' * $1
@@ -160,6 +163,7 @@ const deleteOldChatSessions = async (days = 5) => {
   `;
   const { rows } = await pool.query(query, [days]);
   return rows;
+  */
 };
 
 const deleteExpiredOfflineMessages = async () => {

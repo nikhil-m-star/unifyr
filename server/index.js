@@ -141,14 +141,12 @@ app.use((err, req, res, next) => {
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 
-  // Cleanup old chat sessions (>5 days) and expired offline messages every 6 hours
+  // Cleanup expired offline messages every 6 hours
   const runCleanup = async () => {
     try {
-      const deleted = await chatModel.deleteOldChatSessions(5);
       await chatModel.deleteExpiredOfflineMessages();
-      if (deleted.length > 0) {
-        console.log(`[Cleanup] Removed ${deleted.length} chat session(s) older than 5 days.`);
-      }
+      // Deletion of old chat sessions is disabled to keep history persistent
+      // await chatModel.deleteOldChatSessions(5); 
     } catch (err) {
       console.error('[Cleanup] Error:', err.message);
     }

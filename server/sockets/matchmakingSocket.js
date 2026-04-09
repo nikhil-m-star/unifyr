@@ -197,39 +197,48 @@ module.exports = (io) => {
       matchCheckerIntervals.set(userId, interval);
     });
     socket.on('chat:accept', async ({ matchId }) => {
-      const user = await ensureUser();
-      if (!user || !matchId) return;
+      try {
+        const user = await ensureUser();
+        if (!user || !matchId) return;
 
-      const match = pendingMatches.get(matchId);
-      if (!match) return;
+        const match = pendingMatches.get(matchId);
+        if (!match) return;
 
-      match.acceptedBy.add(user.id);
-      console.log(`[Socket] User ${user.id} accepted match ${matchId}. Accepted by:`, [...match.acceptedBy]);
+        match.acceptedBy.add(user.id);
+        console.log(`[Socket] User ${user.id} accepted match ${matchId}. Accepted by:`, [...match.acceptedBy]);
 
-      if (match.acceptedBy.size === 2) {
-        clearTimeout(match.timeoutId);
-        pendingMatches.delete(matchId);
+        if (match.acceptedBy.size === 2) {
+          clearTimeout(match.timeoutId);
+          pendingMatches.delete(matchId);
 
-        let session = await chatModel.getChatSessionByUsers(match.userAId, match.userBId);
-        if (!session) {
-          session = await chatModel.createChatSession(match.userAId, match.userBId, match.topic);
+          let session = await chatModel.getChatSessionByUsers(match.userAId, match.userBId);
+          if (!session) {
+            session = await chatModel.createChatSession(match.userAId, match.userBId, match.topic);
+          }
+
+          const sessionId = session.id;
+          const roomName = `chat:${sessionId}`;
+          
+          const socketA = io.sockets.sockets.get(match.userASocketId);
+          const socketB = io.sockets.sockets.get(match.userBSocketId);
+          
+          if (socketA) socketA.join(roomName);
+          if (socketB) socketB.join(roomName);
+
+          const userAProfile = await userModel.getPublicUserById(match.userAId);
+          const userBProfile = await userModel.getPublicUserById(match.userBId);
+
+          if (!userAProfile || !userBProfile) {
+            console.error('[Socket] Match success failed: missing profile for one of the users.', { match });
+            return;
+          }
+
+          io.to(match.userASocketId).emit('match_success', { sessionId, partner: userBProfile });
+          io.to(match.userBSocketId).emit('match_success', { sessionId, partner: userAProfile });
+          console.log(`[Socket] Match ${matchId} completed. Session ${sessionId} created.`);
         }
-
-        const sessionId = session.id;
-        const roomName = `chat:${sessionId}`;
-        
-        const socketA = io.sockets.sockets.get(match.userASocketId);
-        const socketB = io.sockets.sockets.get(match.userBSocketId);
-        
-        if (socketA) socketA.join(roomName);
-        if (socketB) socketB.join(roomName);
-
-        const userAProfile = await userModel.getPublicUserById(match.userAId);
-        const userBProfile = await userModel.getPublicUserById(match.userBId);
-
-        io.to(match.userASocketId).emit('match_success', { sessionId, partner: userBProfile });
-        io.to(match.userBSocketId).emit('match_success', { sessionId, partner: userAProfile });
-        console.log(`[Socket] Match ${matchId} completed. Session ${sessionId} created.`);
+      } catch (error) {
+        console.error('[Socket] chat:accept error:', error);
       }
     });
 

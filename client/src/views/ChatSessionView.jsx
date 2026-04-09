@@ -8,15 +8,16 @@ import useIsMobile from '../hooks/useIsMobile';
 import { useNotifications } from '../context/NotificationContext';
 
 const mapMessage = (entry, myUserId) => {
-  const isOwn = Number(entry.sender_id) === Number(myUserId);
+  const senderId = entry.sender_id || entry.senderId;
+  const isOwn = Number(senderId) === Number(myUserId);
   return {
     id: entry.id,
-    text: entry.content,
-    senderId: entry.sender_id,
-    senderName: entry.sender_name,
-    timestamp: entry.created_at,
+    text: entry.content || entry.text,
+    senderId,
+    senderName: entry.sender_name || entry.senderName,
+    timestamp: entry.created_at || entry.timestamp,
     isOwn,
-    isRead: entry.is_read,
+    isRead: entry.is_read || entry.isRead,
     status: 'sent',
   };
 };
@@ -155,17 +156,28 @@ const ChatSessionView = ({ socket }) => {
 
     const handleIncomingMessage = (newMessage) => {
       console.log('[Chat] Incoming message from socket:', newMessage);
-      if (Number(newMessage.sessionId || newMessage.session_id) === sessionId) {
+      const msgSessionId = Number(newMessage.sessionId || newMessage.session_id);
+      
+      if (msgSessionId === sessionId) {
         setMessages((prev) => {
           const mapped = mapMessage(newMessage, myUserId);
           
-          if (mapped.isOwn) {
-             const withoutPending = prev.filter(m => !(m.status === 'pending' && m.text === mapped.text));
-             if (withoutPending.some(m => m.id === mapped.id)) return withoutPending;
-             return [...withoutPending, mapped];
+          // 1. Check if we already have this real ID
+          if (prev.some(m => m.id === mapped.id)) {
+            return prev;
           }
 
-          if (prev.some((m) => m.id === mapped.id)) return prev;
+          // 2. If it's our own message, find and replace the pending one
+          if (mapped.isOwn) {
+            const pendingIndex = prev.findIndex(m => m.status === 'pending' && m.text === mapped.text);
+            if (pendingIndex !== -1) {
+              const next = [...prev];
+              next[pendingIndex] = mapped;
+              return next;
+            }
+          }
+          
+          // 3. Otherwise append
           return [...prev, mapped];
         });
       }

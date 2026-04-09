@@ -10,7 +10,7 @@ const getSessionMessages = async (req, res) => {
       return res.status(400).json({ message: 'Invalid session ID' });
     }
 
-    const session = await chatModel.getChatSessionById(sessionId);
+    const session = await chatModel.getChatSessionById(sessionId, req.dbUser.id);
 
     if (!session) {
       console.warn(`[Chat] Session ${sessionId} not found by user ${req.dbUser.id}`);

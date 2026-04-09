@@ -225,9 +225,8 @@ const ChatSessionView = ({ socket }) => {
 
         const token = await getToken();
 
-        const [meRes, sessionsRes, chatRes, offlineRes, activeRes] = await Promise.all([
+        const [meRes, chatRes, offlineRes, activeRes] = await Promise.all([
           axios.get('/users/me', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('/chat', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`/chat/${sessionId}/messages`, { headers: { Authorization: `Bearer ${token}` } }),
           axios.get('/chat/pending/offline', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { messages: [] } })),
           axios.get('/users/active', { headers: { Authorization: `Bearer ${token}` } }),
@@ -238,20 +237,19 @@ const ChatSessionView = ({ socket }) => {
         const meId = meRes.data?.user?.id || meRes.data?.id;
         console.log('[Chat] Identity resolved:', meId);
         setMyUserId(meId);
-        myUserIdRef.current = meId; // Sync ref immediately to handle early socket messages
+        myUserIdRef.current = meId;
 
         const activeUsers = activeRes.data?.userIds || [];
         setOnlineIds(new Set(activeUsers.map(id => Number(id))));
 
-        const sessionsList = Array.isArray(sessionsRes.data?.sessions) ? sessionsRes.data.sessions : [];
-        const matchingSession = sessionsList.find((session) => Number(session.id) === sessionId);
-        
-        if (matchingSession) {
+        const currentSession = chatRes.data?.session;
+
+        if (currentSession) {
           setPartner({
-            id: matchingSession.partner_id,
-            name: matchingSession.partner_name,
-            profile_pic: matchingSession.partner_profile_pic,
-            role: matchingSession.partner_role,
+            id: currentSession.partner_id,
+            name: currentSession.partner_name,
+            profile_pic: currentSession.partner_profile_pic,
+            role: currentSession.partner_role,
           });
         }
 

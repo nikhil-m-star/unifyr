@@ -10,13 +10,36 @@ const createChatSession = async (userOneId, userTwoId, topic) => {
   return rows[0];
 };
 
-const getChatSessionById = async (sessionId) => {
+const getChatSessionById = async (sessionId, requestingUserId = null) => {
   const query = `
-    SELECT id, user_1_id, user_2_id, topic, created_at
-    FROM chat_sessions
-    WHERE id = $1
+    SELECT 
+      cs.id, 
+      cs.user_1_id, 
+      cs.user_2_id, 
+      cs.topic, 
+      cs.created_at,
+      CASE 
+        WHEN cs.user_1_id = $2 THEN u2.id 
+        ELSE u1.id 
+      END AS partner_id,
+      CASE 
+        WHEN cs.user_1_id = $2 THEN u2.name 
+        ELSE u1.name 
+      END AS partner_name,
+      CASE 
+        WHEN cs.user_1_id = $2 THEN u2.profile_pic 
+        ELSE u1.profile_pic 
+      END AS partner_profile_pic,
+      CASE 
+        WHEN cs.user_1_id = $2 THEN u2.role 
+        ELSE u1.role 
+      END AS partner_role
+    FROM chat_sessions cs
+    JOIN users u1 ON u1.id = cs.user_1_id
+    JOIN users u2 ON u2.id = cs.user_2_id
+    WHERE cs.id = $1
   `;
-  const { rows } = await pool.query(query, [sessionId]);
+  const { rows } = await pool.query(query, [sessionId, requestingUserId]);
   return rows[0];
 };
 

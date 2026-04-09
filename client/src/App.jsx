@@ -187,6 +187,15 @@ const AppContent = () => {
           timestamp: data.timestamp,
         });
 
+        // Suppress notification if currently in the same chat session
+        const currentChatSessionId = window.location.pathname.startsWith('/messages/') 
+          ? window.location.pathname.split('/').pop() 
+          : null;
+
+        if (currentChatSessionId && Number(currentChatSessionId) === Number(data.sessionId)) {
+          return;
+        }
+
         toast(
           (t) => (
             <div

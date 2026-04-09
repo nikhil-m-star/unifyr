@@ -64,6 +64,7 @@ const createTables = async () => {
         session_id INT REFERENCES chat_sessions(id) ON DELETE CASCADE,
         sender_id INT REFERENCES users(id) ON DELETE SET NULL,
         content TEXT,
+        is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     

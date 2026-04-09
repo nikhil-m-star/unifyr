@@ -39,6 +39,7 @@ const getChatSessionMessages = async (sessionId) => {
       messages.session_id,
       messages.sender_id,
       messages.content,
+      messages.is_read,
       messages.created_at,
       users.name AS sender_name,
       users.profile_pic AS sender_profile_pic
@@ -59,6 +60,17 @@ const createMessage = async (sessionId, senderId, content) => {
   `;
   const { rows } = await pool.query(query, [sessionId, senderId, content]);
   return rows[0];
+};
+
+const markMessagesRead = async (sessionId, userId) => {
+  const query = `
+    UPDATE messages 
+    SET is_read = TRUE 
+    WHERE session_id = $1 
+      AND sender_id != $2 
+      AND is_read = FALSE
+  `;
+  await pool.query(query, [sessionId, userId]);
 };
 
 const getMessageById = async (messageId) => {
@@ -139,6 +151,7 @@ module.exports = {
   getChatSessionByUsers,
   getChatSessionMessages,
   createMessage,
+  markMessagesRead,
   getMessageById,
   deleteMessageById,
   deleteChatSessionById,

@@ -133,7 +133,29 @@ module.exports = (io) => {
       });
 
       const recipientId = session.user_1_id === dbUser.id ? session.user_2_id : session.user_1_id;
+      
+      // Check if recipient is in the room before notifying
+      const roomMembers = io.sockets.adapter.rooms.get(`chat:${session.id}`);
+      const isRecipientInRoom = roomMembers && Array.from(roomMembers).some(socketId => {
+        const s = io.sockets.sockets.get(socketId);
+        return s && s.clerkUserId === (session.user_1_id === dbUser.id ? session.user_1_clerk_id : session.user_2_clerk_id);
+      });
+      
+      // We'll simplify: just always notify, but the frontend will filter it out if they are in the chat.
+      // But actually, the user asked to suppress notifications when already chatting.
+      // The most reliable way is to let the frontend handle the suppression based on the current route.
       notificationService.notifyNewMessage(recipientId, dbUser.name, trimmedContent, session.id);
+    });
+
+    socket.on('chat:typing', ({ sessionId, isTyping } = {}) => {
+      if (!dbUser || !sessionId) return;
+      socket.to(`chat:${sessionId}`).emit('chat:typing', { sessionId, userId: dbUser.id, isTyping });
+    });
+
+    socket.on('chat:seen', async ({ sessionId } = {}) => {
+      if (!dbUser || !sessionId) return;
+      await chatModel.markMessagesRead(Number(sessionId), dbUser.id);
+      socket.to(`chat:${sessionId}`).emit('chat:seen', { sessionId, userId: dbUser.id });
     });
 
     socket.on('leave_queue', async () => {

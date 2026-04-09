@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Trash2, Clock, CheckCheck } from 'lucide-react';
+import { ArrowLeft, Send, Trash2 } from 'lucide-react';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
 
@@ -13,6 +13,7 @@ const mapMessage = (entry, myUserId) => ({
   senderName: entry.sender_name,
   timestamp: entry.created_at,
   isOwn: Number(entry.sender_id) === Number(myUserId),
+  isRead: entry.is_read,
   status: 'sent',
 });
 
@@ -30,8 +31,13 @@ const ChatSessionView = ({ socket }) => {
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [myUserId, setMyUserId] = useState(null);
   const [partner, setPartner] = useState(location.state?.partner || null);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const [isPartnerSeen, setIsPartnerSeen] = useState(false);
+  
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const lastTypingEmitRef = useRef(0);
 
   // Scroll to bottom helper
   const scrollToBottom = (behavior = 'smooth') => {
@@ -49,7 +55,7 @@ const ChatSessionView = ({ socket }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isPartnerTyping]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -88,6 +94,15 @@ const ChatSessionView = ({ socket }) => {
 
         const history = (chatRes.data?.messages || []).map((entry) => mapMessage(entry, meId));
         setMessages(history);
+        
+        // Check seen status for last own message
+        if (history.length > 0) {
+          const lastOwn = [...history].reverse().find(m => m.isOwn);
+          if (lastOwn?.isRead) setIsPartnerSeen(true);
+        }
+
+        // Emit seen event
+        socket?.emit('chat:seen', { sessionId });
       } catch (error) {
         console.error('Failed to load chat session:', error);
       } finally {
@@ -112,23 +127,47 @@ const ChatSessionView = ({ socket }) => {
       const mapped = mapMessage(incomingMessage, myUserId);
       
       setMessages((current) => {
-        // If this is our own message coming back, we update the optimistic one if it exists
         if (mapped.isOwn) {
           const exists = current.find(m => m.status === 'pending' && m.text === mapped.text);
           if (exists) {
             return current.map(m => (m === exists ? mapped : m));
           }
         }
-        
-        // Avoid duplicates
         if (current.find(m => m.id === mapped.id)) return current;
-        
         return [...current, mapped];
       });
+
+      // Automatically emit seen for incoming messages if chat is active
+      if (!mapped.isOwn) {
+        socket.emit('chat:seen', { sessionId });
+        setIsPartnerTyping(false);
+      } else {
+        setIsPartnerSeen(false); // Reset seen for your new message
+      }
+    };
+
+    const handleTyping = (data) => {
+      if (Number(data.sessionId) === sessionId && Number(data.userId) !== myUserId) {
+        setIsPartnerTyping(data.isTyping);
+      }
+    };
+
+    const handleSeen = (data) => {
+      if (Number(data.sessionId) === sessionId && Number(data.userId) !== myUserId) {
+        setIsPartnerSeen(true);
+        setMessages(current => current.map(m => m.isOwn ? { ...m, isRead: true } : m));
+      }
     };
 
     socket.on('chat:message', handleIncomingMessage);
-    return () => socket.off('chat:message', handleIncomingMessage);
+    socket.on('chat:typing', handleTyping);
+    socket.on('chat:seen', handleSeen);
+
+    return () => {
+      socket.off('chat:message', handleIncomingMessage);
+      socket.off('chat:typing', handleTyping);
+      socket.off('chat:seen', handleSeen);
+    };
   }, [myUserId, sessionId, socket]);
 
   const handleSend = (event) => {
@@ -148,8 +187,37 @@ const ChatSessionView = ({ socket }) => {
     };
 
     setMessages(prev => [...prev, optimisticMsg]);
+    setIsPartnerSeen(false); // New message hasn't been seen yet
     socket.emit('chat:send', { sessionId, content: trimmedMessage });
+    
+    // Stop typing immediately on send
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      socket.emit('chat:typing', { sessionId, isTyping: false });
+    }
+    
     setMessage('');
+  };
+
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setMessage(val);
+
+    if (!socket || !sessionId) return;
+
+    // Emit typing start if not already emitted recently
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current > 2000) {
+      socket.emit('chat:typing', { sessionId, isTyping: true });
+      lastTypingEmitRef.current = now;
+    }
+
+    // Debounce typing stop
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('chat:typing', { sessionId, isTyping: false });
+      lastTypingEmitRef.current = 0;
+    }, 3000);
   };
 
   const handleDeleteMessage = async (messageId) => {
@@ -207,59 +275,91 @@ const ChatSessionView = ({ socket }) => {
               <p>Start chatting with {partner?.name?.split(' ')[0] || 'your connection'}!</p>
             </div>
           ) : (
-            <AnimatePresence initial={false}>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-                  style={{ 
-                    alignSelf: msg.isOwn ? 'flex-end' : 'flex-start',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: msg.isOwn ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%'
-                  }}
-                >
-                  <div
-                    style={{
-                      position: 'relative',
-                      padding: '11px 16px',
-                      borderRadius: msg.isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                      background: msg.isOwn
-                        ? 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)'
-                        : 'rgba(255, 255, 255, 0.07)',
-                      color: msg.isOwn ? '#000' : 'var(--text-primary)',
-                      border: msg.isOwn ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-                      boxShadow: msg.isOwn ? '0 4px 15px rgba(0, 0, 0, 0.2)' : 'none',
-                      fontSize: '0.94rem',
-                      lineHeight: 1.5,
-                      wordBreak: 'break-word'
+            <>
+              <AnimatePresence initial={false}>
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                    style={{ 
+                      alignSelf: msg.isOwn ? 'flex-end' : 'flex-start',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: msg.isOwn ? 'flex-end' : 'flex-start',
+                      maxWidth: '85%'
                     }}
                   >
-                    {msg.text}
-                    
-                    {msg.isOwn && (
-                      <div style={{ 
-                        position: 'absolute', 
-                        bottom: '4px', 
-                        right: '8px', 
-                        display: 'flex', 
-                        gap: '2px', 
-                        opacity: 0.6
-                      }}>
-                        {msg.status === 'pending' ? (
-                          <Clock size={10} style={{ color: '#000' }} />
-                        ) : (
-                          <CheckCheck size={10} style={{ color: '#0a0a0a' }} />
-                        )}
-                      </div>
-                    )}
+                    <div
+                      style={{
+                        position: 'relative',
+                        padding: '11px 16px',
+                        borderRadius: msg.isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        background: msg.isOwn
+                          ? 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)'
+                          : 'rgba(255, 255, 255, 0.07)',
+                        color: msg.isOwn ? '#000' : 'var(--text-primary)',
+                        border: msg.isOwn ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: msg.isOwn ? '0 4px 15px rgba(0, 0, 0, 0.2)' : 'none',
+                        fontSize: '0.94rem',
+                        lineHeight: 1.5,
+                        wordBreak: 'break-word'
+                      }}
+                    >
+                      {msg.text}
+
+                      {msg.isOwn && !msg.id.toString().startsWith('temp-') && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          disabled={deletingMessageId === msg.id}
+                          className="msg-delete-hover"
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '50%',
+                            background: '#ff4444',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '2px solid var(--bg-page)',
+                            opacity: 0,
+                            transition: 'opacity 0.2s',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              {isPartnerSeen && messages.length > 0 && messages[messages.length - 1].isOwn && (
+                <div style={{ alignSelf: 'flex-end', fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '-2px', marginRight: '4px' }}>
+                  Seen
+                </div>
+              )}
+
+              {isPartnerTyping && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '0.75rem', padding: '4px 8px' }}
+                >
+                  <div className="typing-indicator">
+                    <span></span><span></span><span></span>
                   </div>
+                  {partner?.name?.split(' ')[0]} is typing...
                 </motion.div>
-              ))}
-            </AnimatePresence>
+              )}
+            </>
           )}
         </div>
 
@@ -269,7 +369,7 @@ const ChatSessionView = ({ socket }) => {
               ref={inputRef}
               type="text"
               value={message}
-              onChange={(event) => setMessage(event.target.value)}
+              onChange={handleInputChange}
               placeholder="Type a message..."
               className="glass-input"
               style={{ flex: 1, borderRadius: '18px', padding: '14px 20px', fontSize: '0.95rem' }}
@@ -294,6 +394,19 @@ const ChatSessionView = ({ socket }) => {
           </form>
         </div>
       </div>
+      <style>
+        {`
+          .motion-div:hover .msg-delete-hover { opacity: 1 !important; }
+          .typing-indicator { display: flex; gap: 3px; }
+          .typing-indicator span { width: 5px; height: 5px; background: currentColor; border-radius: 50%; display: inline-block; animation: typing-bounce 1.4s infinite ease-in-out both; }
+          .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+          .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+          @keyframes typing-bounce { 
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 0.8; }
+          }
+        `}
+      </style>
     </div>
   );
 };

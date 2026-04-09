@@ -128,6 +128,10 @@ const recommendEvents = async (req, res) => {
       return res.status(400).json({ message: 'Prompt is required.' });
     }
 
+    if (prompt.length > 300) {
+      return res.status(400).json({ message: 'Prompt must be 300 characters or fewer.' });
+    }
+
     const groqApiKey = process.env.GROQ_API_KEY;
     if (!groqApiKey) {
       return res.status(503).json({ message: 'AI recommendations are not configured yet.' });

@@ -7,6 +7,7 @@ const { rateLimit } = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const http = require('http');
 const { Server } = require('socket.io');
+const { pool } = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -105,9 +106,15 @@ require('./sockets/matchmakingSocket')(io);
 // Initialize Global Notification Service
 notificationService.init(io);
 
-// Health Check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Unifyr server is running successfully.' });
+// Health Check with DB ping
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({ status: 'OK', message: 'Unifyr server and database are healthy.' });
+  } catch (err) {
+    console.error('[Health] DB Connection Error:', err.message);
+    res.status(503).json({ status: 'ERROR', message: 'Database unreachable' });
+  }
 });
 
 // API Routes
@@ -119,6 +126,35 @@ app.use('/api/utsav', utsavRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  const message = process.env.NODE_ENV === 'production'
+    ? (status < 500 ? err.message : 'Internal server error')
+    : (err.message || 'Internal server error');
+  res.status(status).json({ message });
+});
+
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Graceful Shutdown
+const shutdown = () => {
+  console.log('[Server] Graceful shutdown initiation...');
+  server.close(() => {
+    console.log('[Server] HTTP server closed.');
+    pool.end(() => {
+      console.log('[Server] DB pool closed. Process exiting.');
+      process.exit(0);
+    });
+  });
+  // Force exit after 10s if graceful shutdown fails
+  setTimeout(() => {
+    console.error('[Server] Could not close connections in time, forceful exit.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

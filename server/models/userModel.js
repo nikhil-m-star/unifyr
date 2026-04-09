@@ -75,6 +75,12 @@ const updateUserById = async (id, updates = {}) => {
   return rows[0];
 };
 
+const getPublicUserById = async (id) => {
+  const query = 'SELECT id, name, role, profile_pic, bio, ready_tag FROM users WHERE id = $1';
+  const { rows } = await pool.query(query, [id]);
+  return rows[0];
+};
+
 module.exports = {
   createUser,
   getUserByClerkId,
@@ -82,4 +88,5 @@ module.exports = {
   getAllUsers,
   updateUserRoleById,
   updateUserById,
+  getPublicUserById,
 };

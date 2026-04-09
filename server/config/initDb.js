@@ -95,6 +95,16 @@ const createTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(blocker_id, blocked_id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+    CREATE INDEX IF NOT EXISTS idx_chat_sessions_user1 ON chat_sessions(user_1_id);
+    CREATE INDEX IF NOT EXISTS idx_chat_sessions_user2 ON chat_sessions(user_2_id);
+    CREATE INDEX IF NOT EXISTS idx_offline_messages_recipient ON offline_messages(recipient_id) WHERE delivered_at IS NULL;
+    CREATE INDEX IF NOT EXISTS idx_teams_creator ON teams(creator_id);
+    CREATE INDEX IF NOT EXISTS idx_join_requests_team ON join_requests(team_id);
+    CREATE INDEX IF NOT EXISTS idx_join_requests_sender ON join_requests(sender_id);
   `;
 
   try {

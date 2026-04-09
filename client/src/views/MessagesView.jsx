@@ -6,11 +6,13 @@ import { MessageSquare, Clock, Loader2, Trash2 } from 'lucide-react';
 import axios from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { toast } from 'react-hot-toast';
 
 const MessagesView = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingSessionId, setDeletingSessionId] = useState(null);
+  const [onlineIds, setOnlineIds] = useState(new Set());
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -29,10 +31,30 @@ const MessagesView = () => {
     }
   };
 
+  const fetchOnlineStatus = async () => {
+    try {
+      const token = await getToken();
+      const response = await axios.get('/users/active', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const ids = Array.isArray(response.data?.userIds) ? response.data.userIds : [];
+      setOnlineIds(new Set(ids));
+    } catch (error) {
+      console.error('Failed to fetch online presence:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSessions();
-    const interval = setInterval(fetchSessions, 10000); 
-    return () => clearInterval(interval);
+    fetchOnlineStatus();
+    
+    const sessionInterval = setInterval(fetchSessions, 10000); 
+    const presenceInterval = setInterval(fetchOnlineStatus, 10000);
+    
+    return () => {
+      clearInterval(sessionInterval);
+      clearInterval(presenceInterval);
+    };
   }, [getToken]);
 
   const handleDeleteSession = async (event, sessionId) => {
@@ -49,7 +71,7 @@ const MessagesView = () => {
       await fetchSessions();
     } catch (error) {
       console.error('Failed to delete chat session:', error);
-      alert('Could not delete chat right now. Please try again.');
+      toast.error('Could not delete chat right now. Please try again.');
     } finally {
       setDeletingSessionId(null);
     }
@@ -165,8 +187,27 @@ const MessagesView = () => {
                       </span>
                     </div>
 
-                    <div className="msg-topic" style={{ color: hasUnread ? 'var(--text-primary)' : 'var(--accent-secondary)' }}>
-                      {session.topic || 'Chat'}
+                    <div 
+                      className="msg-topic" 
+                      style={{ 
+                        color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}
+                    >
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        borderRadius: '50%', 
+                        background: onlineIds.has(session.partner_id) ? '#10b981' : '#4b5563',
+                        boxShadow: onlineIds.has(session.partner_id) ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none'
+                      }} />
+                      {onlineIds.has(session.partner_id) ? 'Online' : 'Offline'}
                     </div>
 
                     <p className="msg-preview" style={{

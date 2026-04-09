@@ -12,6 +12,7 @@ const upsertConnectedUser = (user) => {
   existing.profile_pic = user.profile_pic;
   existing.ready_tag = user.ready_tag;
   existing.bio = user.bio;
+  // email intentionally excluded for privacy
   existing.socketIds.add(user.socketId);
   existing.lastSeenAt = Date.now();
 

@@ -64,6 +64,12 @@ module.exports = (io) => {
   });
 
   const matchCheckerIntervals = new Map();
+  const pendingMatches = new Map(); // sessionKey -> { userAId, userBId, userASocketId, userBSocketId, topic, acceptedBy: Set, timeoutId }
+
+  const getSessionKey = (id1, id2) => {
+    const sorted = [Number(id1), Number(id2)].sort((a, b) => a - b);
+    return `${sorted[0]}:${sorted[1]}`;
+  };
 
   io.on('connection', async (socket) => {
     let dbUser = null;
@@ -72,6 +78,15 @@ module.exports = (io) => {
     // Start sync immediately
     syncPromise = (async () => {
       try {
+        if (matchCheckerIntervals.size > 500) {
+          // Safety valve: clear all intervals if map grows unexpectedly large
+          for (const [id, interval] of matchCheckerIntervals) {
+            clearInterval(interval);
+            matchCheckerIntervals.delete(id);
+          }
+          console.warn('[Socket] matchCheckerIntervals safety valve triggered: Map cleared.');
+        }
+
         dbUser = await syncUserFromClerk(socket.clerkUserId, socket.clerkClaims);
         if (dbUser) {
           socket.join(`user:${dbUser.id}`);
@@ -111,6 +126,20 @@ module.exports = (io) => {
         const match = await findMatch(userId);
         if (!match) return;
 
+        // Skip if already in a pending match with someone
+        const sessionKey = getSessionKey(userId, match.userId);
+        if (pendingMatches.has(sessionKey)) return;
+
+        // Skip if they already have a chat session
+        const existingSession = await chatModel.getChatSessionByUsers(userId, match.userId);
+        if (existingSession) {
+          // If they already have a session, just find someone else later
+          // Note: In a real app we might want to dequeue them or notify them, 
+          // but for now we just skip this specific pairing in the loop.
+          return;
+        }
+
+        // Dequeue both to prevent double-matching
         await dequeueUser(userId);
         await dequeueUser(match.userId);
 
@@ -124,29 +153,103 @@ module.exports = (io) => {
           matchCheckerIntervals.delete(match.userId);
         }
 
-        let session = await chatModel.getChatSessionByUsers(userId, match.userId);
-        if (!session) {
-          session = await chatModel.createChatSession(userId, match.userId, normalizedTopic);
-        }
+        const currentUserProfile = await userModel.getPublicUserById(userId);
+        const matchedUserProfile = await userModel.getPublicUserById(match.userId);
 
-        const sessionId = session.id;
-        const roomName = `chat:${sessionId}`;
-        const matchedSocket = io.sockets.sockets.get(match.socketId);
-        const currentUserProfile = await userModel.getUserById(userId);
-        const matchedUserProfile = await userModel.getUserById(match.userId);
+        const matchId = sessionKey;
+        const pendingMatch = {
+          userAId: userId,
+          userBId: match.userId,
+          userASocketId: socket.id,
+          userBSocketId: match.socketId,
+          topic: normalizedTopic,
+          acceptedBy: new Set(),
+          timeoutId: setTimeout(() => {
+            const m = pendingMatches.get(matchId);
+            if (m) {
+              io.to(m.userASocketId).emit('match_cancelled', { matchId, reason: 'timeout' });
+              io.to(m.userBSocketId).emit('match_cancelled', { matchId, reason: 'timeout' });
+              pendingMatches.delete(matchId);
+              console.log(`[Socket] Match ${matchId} cancelled due to timeout.`);
+            }
+          }, 30000)
+        };
 
-        socket.join(roomName);
-        if (matchedSocket) {
-          matchedSocket.join(roomName);
-        }
+        pendingMatches.set(matchId, pendingMatch);
 
-        socket.emit('match_success', { sessionId, partner: matchedUserProfile });
-        io.to(match.socketId).emit('match_success', { sessionId, partner: currentUserProfile });
+        socket.emit('match_pending', { 
+          matchId, 
+          partnerName: matchedUserProfile.name, 
+          partnerProfilePic: matchedUserProfile.profile_pic 
+        });
+        
+        io.to(match.socketId).emit('match_pending', { 
+          matchId, 
+          partnerName: currentUserProfile.name, 
+          partnerProfilePic: currentUserProfile.profile_pic 
+        });
       };
 
       await attemptMatch();
       const interval = setInterval(attemptMatch, 2500);
       matchCheckerIntervals.set(userId, interval);
+    });
+    socket.on('chat:accept', async ({ matchId }) => {
+      const user = await ensureUser();
+      if (!user || !matchId) return;
+
+      const match = pendingMatches.get(matchId);
+      if (!match) return;
+
+      match.acceptedBy.add(user.id);
+      console.log(`[Socket] User ${user.id} accepted match ${matchId}. Accepted by:`, [...match.acceptedBy]);
+
+      if (match.acceptedBy.size === 2) {
+        clearTimeout(match.timeoutId);
+        pendingMatches.delete(matchId);
+
+        let session = await chatModel.getChatSessionByUsers(match.userAId, match.userBId);
+        if (!session) {
+          session = await chatModel.createChatSession(match.userAId, match.userBId, match.topic);
+        }
+
+        const sessionId = session.id;
+        const roomName = `chat:${sessionId}`;
+        
+        const socketA = io.sockets.sockets.get(match.userASocketId);
+        const socketB = io.sockets.sockets.get(match.userBSocketId);
+        
+        if (socketA) socketA.join(roomName);
+        if (socketB) socketB.join(roomName);
+
+        const userAProfile = await userModel.getPublicUserById(match.userAId);
+        const userBProfile = await userModel.getPublicUserById(match.userBId);
+
+        io.to(match.userASocketId).emit('match_success', { sessionId, partner: userBProfile });
+        io.to(match.userBSocketId).emit('match_success', { sessionId, partner: userAProfile });
+        console.log(`[Socket] Match ${matchId} completed. Session ${sessionId} created.`);
+      }
+    });
+
+    socket.on('chat:decline', async ({ matchId }) => {
+      const user = await ensureUser();
+      if (!user || !matchId) return;
+
+      const match = pendingMatches.get(matchId);
+      if (!match) return;
+
+      clearTimeout(match.timeoutId);
+      pendingMatches.delete(matchId);
+
+      io.to(match.userASocketId).emit('match_cancelled', { matchId, reason: 'declined' });
+      io.to(match.userBSocketId).emit('match_cancelled', { matchId, reason: 'declined' });
+
+      // Re-enqueue the non-declining user
+      const otherUserId = match.userAId === user.id ? match.userBId : match.userAId;
+      const otherSocketId = match.userAId === user.id ? match.userBSocketId : match.userASocketId;
+      
+      console.log(`[Socket] User ${user.id} declined match ${matchId}. Re-enqueuing user ${otherUserId}.`);
+      await enqueueUser(otherUserId, otherSocketId, match.topic);
     });
 
     socket.on('chat:join', async ({ sessionId } = {}) => {
@@ -197,6 +300,11 @@ module.exports = (io) => {
       const trimmedContent = content.trim();
       if (!trimmedContent) {
         socket.emit('chat:error', { error: 'Message cannot be empty', messageText: content });
+        return;
+      }
+
+      if (trimmedContent.length > 2000) {
+        socket.emit('chat:error', { error: 'Message is too long (max 2000 characters)', messageText: content });
         return;
       }
 

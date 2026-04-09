@@ -6,6 +6,7 @@ import { ArrowLeft, Send, Trash2 } from 'lucide-react';
 import axios from '../api/axios';
 import useIsMobile from '../hooks/useIsMobile';
 import { useNotifications } from '../context/NotificationContext';
+import { toast } from 'react-hot-toast';
 
 const mapMessage = (entry, myUserId) => {
   const senderId = entry.sender_id || entry.senderId;
@@ -360,7 +361,7 @@ const ChatSessionView = ({ socket }) => {
       setMessages((currentMessages) => currentMessages.filter((entry) => entry.id !== messageId));
     } catch (error) {
       console.error('[Chat] Delete failure:', error);
-      alert('Unable to delete the message right now.');
+      toast.error('Unable to delete the message right now.');
     } finally {
       setDeletingMessageId(null);
     }

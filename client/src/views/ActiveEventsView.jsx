@@ -30,6 +30,8 @@ const ActiveEventsView = () => {
   const [requestForm, setRequestForm] = useState({ teamName: '', lookingFor: '' });
   const [creatingRequest, setCreatingRequest] = useState(false);
   const [requestStatus, setRequestStatus] = useState(null);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { isSignedIn, getToken } = useAuth();
@@ -37,16 +39,19 @@ const ActiveEventsView = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const response = await axios.get('/utsav');
         setEvents(response.data);
-      } catch (error) {
-        console.error('Failed to fetch Utsav events:', error);
+      } catch (err) {
+        console.error('Failed to fetch Utsav events:', err);
+        setError(err);
       } finally {
         setLoading(false);
       }
     };
     fetchEvents();
-  }, []);
+  }, [retryCount]);
 
   const categories = ['All', ...new Set(events.map(e => e.category))];
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -113,6 +118,25 @@ const ActiveEventsView = () => {
       <div className="messages-loading">
         <Loader2 className="animate-spin" size={32} color="var(--accent-primary)" />
         <p style={{ marginTop: '1rem', fontWeight: 500, letterSpacing: '0.05em' }}>SYNCING UTSAV 2026 LIVE FEED...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="messages-loading">
+        <div className="empty-state" style={{ padding: '0' }}>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontWeight: 500 }}>
+            Unable to fetch live event feed. Please check your connection.
+          </p>
+          <button 
+            onClick={() => setRetryCount(curr => curr + 1)}
+            className="btn-primary"
+            style={{ padding: '12px 24px', borderRadius: '12px' }}
+          >
+            Retry Connection
+          </button>
+        </div>
       </div>
     );
   }

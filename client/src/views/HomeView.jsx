@@ -131,6 +131,8 @@ const HomeView = ({ refreshToken = 0 }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const carouselRef = useRef(null);
@@ -140,6 +142,7 @@ const HomeView = ({ refreshToken = 0 }) => {
   useEffect(() => {
     const fetchHomeData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const [utsavRes, teamsRes] = await Promise.all([axios.get('/utsav'), axios.get('/teams')]);
         const utsavEvents = Array.isArray(utsavRes.data) ? utsavRes.data : [];
@@ -147,15 +150,16 @@ const HomeView = ({ refreshToken = 0 }) => {
         setAllUtsavEvents(utsavEvents);
         setFeaturedEvents(sorted.slice(0, 14));
         setTeams(teamsRes.data);
-      } catch (error) {
-        console.error('Failed to fetch discovery feed:', error);
+      } catch (err) {
+        console.error('Failed to fetch discovery feed:', err);
+        setError(err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchHomeData();
-  }, [refreshToken]);
+  }, [refreshToken, retryCount]);
 
   useEffect(() => {
     if (featuredEvents.length <= 1) return undefined;
@@ -294,6 +298,28 @@ const HomeView = ({ refreshToken = 0 }) => {
             {[1, 2, 3, 4].map((item) => (
               <div key={item} className="skeleton" style={{ minHeight: '220px' }} />
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="market-shell">
+        <div className="feed-section top-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', textAlign: 'center' }}>
+          <div className="empty-state">
+            <h3 style={{ marginBottom: '1rem' }}>Feed Connection Error</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', maxWidth: '400px' }}>
+              We're having trouble reaching the campus hive. Please check your data connection.
+            </p>
+            <button 
+              onClick={() => setRetryCount(curr => curr + 1)}
+              className="btn-primary"
+              style={{ padding: '14px 32px', borderRadius: '14px' }}
+            >
+              Retry Discovery
+            </button>
           </div>
         </div>
       </div>

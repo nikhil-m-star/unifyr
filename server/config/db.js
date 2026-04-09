@@ -6,9 +6,10 @@ const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: shouldUseSsl
-    ? { rejectUnauthorized }
-    : false,
+  ssl: shouldUseSsl ? { rejectUnauthorized } : false,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 pool.on('error', (err) => {

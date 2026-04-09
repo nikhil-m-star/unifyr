@@ -391,6 +391,19 @@ img {
   flex-direction: column;
 }
 
+.market-shell--immersive .chat-page,
+.market-shell--immersive .messages-list {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
+.market-shell--immersive .chat-page {
+  height: 100%;
+  border: none;
+}
+
 .auth-shell {
   min-height: calc(100vh - 120px);
   display: flex;

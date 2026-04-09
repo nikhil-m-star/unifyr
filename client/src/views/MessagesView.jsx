@@ -57,6 +57,23 @@ const MessagesView = () => {
     };
   }, [getToken]);
 
+  const handleSessionClick = (session) => {
+    if (session.id && session.partner_id) {
+      navigate(`/messages/${session.id}`, {
+        state: {
+          partner: {
+            id: session.partner_id,
+            name: session.partner_name,
+            profile_pic: session.partner_profile_pic,
+            role: session.partner_role,
+          },
+        },
+      });
+    } else {
+      toast.error('Could not open conversation. Missing session data.');
+    }
+  };
+
   const handleDeleteSession = async (event, sessionId) => {
     event.stopPropagation();
     const shouldDelete = window.confirm('Delete this chat and all its messages?');
@@ -131,22 +148,8 @@ const MessagesView = () => {
                     position: 'relative',
                     borderLeft: hasUnread ? '3px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.08)'
                   }}
-                  onClick={() => {
-                    if (session.id && session.partner_id) {
-                      navigate(`/messages/${session.id}`, {
-                        state: {
-                          partner: {
-                            id: session.partner_id,
-                            name: session.partner_name,
-                            profile_pic: session.partner_profile_pic,
-                            role: session.partner_role,
-                          },
-                        },
-                      });
-                    } else {
-                      toast.error('Could not open conversation. Missing session data.');
-                    }
-                  }}
+                  onClick={() => handleSessionClick(session)}
+                  onTap={() => handleSessionClick(session)}
                 >
                   <div className="msg-avatar-wrap">
                     <div className="msg-avatar" style={{ 
@@ -230,6 +233,7 @@ const MessagesView = () => {
                       type="button"
                       className="msg-delete-btn"
                       onClick={(event) => handleDeleteSession(event, session.id)}
+                      onPointerDown={(e) => e.stopPropagation()}
                       disabled={deletingSessionId === session.id}
                       aria-label="Delete chat"
                     >

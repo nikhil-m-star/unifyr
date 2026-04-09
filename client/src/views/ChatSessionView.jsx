@@ -225,11 +225,12 @@ const ChatSessionView = ({ socket }) => {
 
         const token = await getToken();
 
-        const [meRes, sessionsRes, chatRes, offlineRes] = await Promise.all([
+        const [meRes, sessionsRes, chatRes, offlineRes, activeRes] = await Promise.all([
           axios.get('/users/me', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get('/chat', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`/chat/${sessionId}/messages`, { headers: { Authorization: `Bearer ${token}` } }),
           axios.get('/chat/pending/offline', { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { messages: [] } })),
+          axios.get('/users/active', { headers: { Authorization: `Bearer ${token}` } }),
         ]);
 
         if (!mounted) return;
@@ -237,6 +238,10 @@ const ChatSessionView = ({ socket }) => {
         const meId = meRes.data?.user?.id || meRes.data?.id;
         console.log('[Chat] Identity resolved:', meId);
         setMyUserId(meId);
+        myUserIdRef.current = meId; // Sync ref immediately to handle early socket messages
+
+        const activeUsers = activeRes.data?.userIds || [];
+        setOnlineIds(new Set(activeUsers.map(id => Number(id))));
 
         const sessionsList = Array.isArray(sessionsRes.data?.sessions) ? sessionsRes.data.sessions : [];
         const matchingSession = sessionsList.find((session) => Number(session.id) === sessionId);
@@ -258,10 +263,6 @@ const ChatSessionView = ({ socket }) => {
         offlineMessages.forEach(msg => {
           console.log('[Chat] Offline notification received:', msg.sender_name);
         });
-
-        // Set initial online status
-        const activeUsers = meRes.data?.activeUsers || [];
-        setOnlineIds(new Set(activeUsers.map(u => u.id)));
         
         if (history.length > 0) {
           const lastOwnIdx = [...history].reverse().findIndex(m => m.isOwn);
@@ -293,7 +294,7 @@ const ChatSessionView = ({ socket }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const ids = Array.isArray(response.data?.userIds) ? response.data.userIds : [];
-        if (mounted) setOnlineIds(new Set(ids));
+        if (mounted) setOnlineIds(new Set(ids.map(id => Number(id))));
       } catch (error) {
         console.error('Failed to fetch online presence:', error);
       }

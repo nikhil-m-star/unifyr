@@ -163,6 +163,13 @@ const ChatSessionView = ({ socket }) => {
     };
 
     const handleIncomingMessage = (newMessage) => {
+      if (!myUserIdRef.current) {
+        console.warn('[Chat] Message received before identity sync, queuing...');
+        // Retry shortly
+        setTimeout(() => handleIncomingMessage(newMessage), 100);
+        return;
+      }
+
       console.log('[Chat] Incoming message from socket:', newMessage);
       const msgSessionId = Number(newMessage.sessionId || newMessage.session_id);
       

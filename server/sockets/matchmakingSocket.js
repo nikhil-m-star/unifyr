@@ -271,7 +271,7 @@ module.exports = (io) => {
         return;
       }
 
-      const session = await chatModel.getChatSessionById(Number(sessionId));
+      const session = await chatModel.getChatSessionById(Number(sessionId), user.id);
       if (!session) {
         console.warn(`[Socket] chat:join failed. Session ${sessionId} not found.`);
         socket.emit('chat:error', { error: 'Chat session not found' });
@@ -319,7 +319,7 @@ module.exports = (io) => {
         return;
       }
 
-      const session = await chatModel.getChatSessionById(Number(sessionId));
+      const session = await chatModel.getChatSessionById(Number(sessionId), user.id);
       if (!session) {
         socket.emit('chat:error', { error: 'Chat session not found', messageText: trimmedContent });
         return;

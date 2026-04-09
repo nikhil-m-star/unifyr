@@ -149,7 +149,6 @@ const MessagesView = () => {
                     borderLeft: hasUnread ? '3px solid var(--accent-primary)' : '1px solid rgba(255, 255, 255, 0.08)'
                   }}
                   onClick={() => handleSessionClick(session)}
-                  onTap={() => handleSessionClick(session)}
                 >
                   <div className="msg-avatar-wrap">
                     <div className="msg-avatar" style={{ 

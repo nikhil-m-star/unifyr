@@ -387,6 +387,7 @@ img {
 .market-shell--immersive {
   padding: 0;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -402,6 +403,7 @@ img {
 .market-shell--immersive .chat-page {
   height: 100%;
   border: none;
+  min-height: 0;
 }
 
 .auth-shell {
@@ -2114,6 +2116,7 @@ img {
 
 .chat-page__messages {
   flex: 1;
+  min-height: 0;
   padding: 1.25rem;
   overflow-y: auto;
   display: flex;

@@ -457,7 +457,7 @@ const ChatSessionView = ({ socket }) => {
           )}
         </div>
 
-        <div ref={scrollRef} className="chat-page__messages hide-scrollbar" style={{ padding: '1.5rem', gap: '0.6rem' }}>
+        <div ref={scrollRef} className="chat-page__messages hide-scrollbar" style={{ flex: 1, minHeight: 0, padding: '1.5rem', gap: '0.6rem' }}>
           {errorMessage ? (
             <div className="messages-empty" style={{ padding: '4rem 1rem' }}>
               <h2 style={{ fontSize: '1.4rem', color: '#ff4444' }}>Oops!</h2>

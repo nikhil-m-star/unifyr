@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn, useAuth } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, RedirectToSignIn, useAuth, useClerk, useUser } from '@clerk/clerk-react';
 import { Toaster, toast } from 'react-hot-toast';
 import io from 'socket.io-client';
 import Navbar from './components/layout/Navbar';
@@ -86,6 +86,8 @@ const AppContent = () => {
   const [homeRefreshToken, setHomeRefreshToken] = useState(0);
   const [socket, setSocket] = useState(null);
   const { isSignedIn, getToken } = useAuth();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -94,6 +96,23 @@ const AppContent = () => {
   const isMessagesHubRoute = location.pathname === '/messages';
   const isImmersiveRoute = isChatSessionRoute || isMessagesHubRoute;
   const hideNavbar = isChatSessionRoute;
+  const hasTriggeredDomainSignOut = useRef(false);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || hasTriggeredDomainSignOut.current) {
+      if (!isSignedIn) {
+        hasTriggeredDomainSignOut.current = false;
+      }
+      return;
+    }
+
+    const primaryEmail = (user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '').toLowerCase();
+    if (primaryEmail && !primaryEmail.endsWith('@bmsce.ac.in')) {
+      hasTriggeredDomainSignOut.current = true;
+      toast.error('Please use an email with bmsce.ac.in.');
+      signOut({ redirectUrl: '/auth' });
+    }
+  }, [isLoaded, isSignedIn, user, signOut]);
 
   useEffect(() => {
     const { title, description, robots } = seoConfigForPath(location.pathname);

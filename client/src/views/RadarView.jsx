@@ -4,7 +4,7 @@ import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Radar as RadarIcon, Users, MessageSquare, X, Zap, Loader2, ShieldCheck } from 'lucide-react';
-import axios, { API_ORIGIN } from '../api/axios';
+import axios, { getApiOrigin } from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { toast } from 'react-hot-toast';
@@ -32,7 +32,7 @@ const RadarView = () => {
         const token = await getToken();
         if (!mounted || !token || socketRef.current) return;
 
-        const socket = io(API_ORIGIN, { auth: { token }, transports: ['websocket'] });
+        const socket = io(getApiOrigin(), { auth: { token }, transports: ['websocket'] });
         socketRef.current = socket;
 
         socket.on('match_success', ({ sessionId: matchedSessionId, partner: matchedPartner }) => {

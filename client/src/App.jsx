@@ -15,7 +15,7 @@ import RecommendationsView from './views/RecommendationsView';
 import ActiveEventsView from './views/ActiveEventsView';
 import AdminView from './views/AdminView';
 import RadarView from './views/RadarView';
-import { API_ORIGIN } from './api/axios';
+import { getApiOrigin } from './api/axios';
 import { NotificationProvider, useNotifications } from './context/NotificationContext';
 import useIsMobile from './hooks/useIsMobile';
 
@@ -148,7 +148,7 @@ const AppContent = () => {
     let socketInstance;
     const initSocket = async () => {
       const token = await getToken();
-      socketInstance = io(API_ORIGIN, {
+      socketInstance = io(getApiOrigin(), {
         auth: { token },
         transports: ['websocket'],
       });

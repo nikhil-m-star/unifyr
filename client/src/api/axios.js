@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const FALLBACK_PROD_API_ORIGIN = 'https://unifyr-production.onrender.com';
+const PRIMARY_PROD_API_ORIGIN = 'https://unifyr-production.onrender.com';
+const SECONDARY_PROD_API_ORIGIN = 'https://unifyr-production.up.railway.app';
 
 const isPrivateIPv4 = (hostname = '') => {
   if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
@@ -36,24 +37,48 @@ const getDefaultApiOrigin = () => {
     return `http://${hostname}:5000`;
   }
 
-  return FALLBACK_PROD_API_ORIGIN;
+  return PRIMARY_PROD_API_ORIGIN;
 };
 
-export const API_ORIGIN = (import.meta.env.VITE_API_ORIGIN || getDefaultApiOrigin()).replace(/\/$/, '');
-export const API_BASE_URL = `${API_ORIGIN}/api`;
+const configuredApiOrigin = import.meta.env.VITE_API_ORIGIN
+  ? import.meta.env.VITE_API_ORIGIN.replace(/\/$/, '')
+  : null;
+
+const fallbackApiOrigins = configuredApiOrigin
+  ? [configuredApiOrigin]
+  : [PRIMARY_PROD_API_ORIGIN, SECONDARY_PROD_API_ORIGIN];
+
+let activeApiOrigin = (configuredApiOrigin || getDefaultApiOrigin()).replace(/\/$/, '');
+let activeFallbackIndex = fallbackApiOrigins.findIndex((origin) => origin === activeApiOrigin);
+if (activeFallbackIndex < 0) activeFallbackIndex = 0;
+
+export const getApiOrigin = () => activeApiOrigin;
+export const API_ORIGIN = activeApiOrigin;
+export const API_BASE_URL = `${activeApiOrigin}/api`;
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${activeApiOrigin}/api`,
   withCredentials: true,
   timeout: 30000, // bumped from 15s → 30s for slow mobile networks
 });
 
-// Retry up to 2 times on network errors with exponential backoff
+// Retry on network errors and automatically fail over to secondary backend if primary is unavailable.
 axiosInstance.interceptors.response.use(
   (res) => res,
   async (err) => {
+    const noServerOnRender = err.response?.headers?.['x-render-routing'] === 'no-server';
     const isNetworkError = !err.response && err.code !== 'ERR_CANCELED';
     const retryCount = err.config._retryCount || 0;
+    const canTryNextOrigin = !configuredApiOrigin && activeFallbackIndex < fallbackApiOrigins.length - 1;
+
+    if ((isNetworkError || noServerOnRender) && canTryNextOrigin && !err.config?._retriedWithNextOrigin) {
+      activeFallbackIndex += 1;
+      activeApiOrigin = fallbackApiOrigins[activeFallbackIndex];
+      axiosInstance.defaults.baseURL = `${activeApiOrigin}/api`;
+      err.config._retriedWithNextOrigin = true;
+      err.config.baseURL = `${activeApiOrigin}/api`;
+      return axiosInstance(err.config);
+    }
 
     if (isNetworkError && retryCount < 2) {
       err.config._retryCount = retryCount + 1;

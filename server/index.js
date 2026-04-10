@@ -23,11 +23,22 @@ const defaultDevOrigins = [
   'http://127.0.0.1:3000',
 ];
 
-const allowedOrigins = process.env.CORS_ORIGIN
+const configuredOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
   : (isProduction ? [] : defaultDevOrigins);
 
-if (isProduction && allowedOrigins.length === 0) {
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const wildcardToRegex = (pattern = '') => {
+  if (!pattern.includes('*')) return null;
+  return new RegExp(`^${escapeRegex(pattern).replace(/\\\*/g, '.*')}$`);
+};
+
+const originMatchers = configuredOrigins.map((pattern) => ({
+  pattern,
+  regex: wildcardToRegex(pattern),
+}));
+
+if (isProduction && originMatchers.length === 0) {
   throw new Error('CORS_ORIGIN must be set in production.');
 }
 
@@ -41,11 +52,39 @@ const isOriginAllowed = (origin) => {
     return true;
   }
 
-  if (allowedOrigins.length === 0) {
+  if (originMatchers.length === 0) {
     return false;
   }
 
-  return allowedOrigins.includes(origin);
+  const isConfiguredAllowed = originMatchers.some(({ pattern, regex }) => {
+    if (regex) return regex.test(origin);
+    return pattern === origin;
+  });
+
+  if (isConfiguredAllowed) {
+    return true;
+  }
+
+  if (!isProduction) {
+    try {
+      const { hostname } = new URL(origin);
+      const isPrivateIPv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)
+        && hostname.split('.').map(Number).every((value) => value >= 0 && value <= 255)
+        && (
+          hostname.startsWith('10.')
+          || hostname.startsWith('192.168.')
+          || /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+        );
+
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || isPrivateIPv4) {
+        return true;
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 };
 
 // Security Middlewares

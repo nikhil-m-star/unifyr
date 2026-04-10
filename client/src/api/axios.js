@@ -1,6 +1,20 @@
 import axios from 'axios';
 
-const FALLBACK_PROD_API_ORIGIN = 'https://unifyr-production.up.railway.app';
+const FALLBACK_PROD_API_ORIGIN = 'https://unifyr-production.onrender.com';
+
+const isPrivateIPv4 = (hostname = '') => {
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) return false;
+  const parts = hostname.split('.').map((value) => Number(value));
+  if (parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) return false;
+
+  return (
+    parts[0] === 10 ||
+    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+    (parts[0] === 192 && parts[1] === 168) ||
+    (parts[0] === 127) ||
+    parts[0] === 0
+  );
+};
 
 const getDefaultApiOrigin = () => {
   if (typeof window === 'undefined') {
@@ -13,8 +27,13 @@ const getDefaultApiOrigin = () => {
     return 'http://localhost:5000';
   }
 
-  if (hostname.endsWith('railway.app')) {
+  if (hostname.endsWith('onrender.com')) {
     return origin;
+  }
+
+  // Mobile/LAN testing: if frontend is opened via local network IP, use same host on backend port 5000.
+  if (isPrivateIPv4(hostname)) {
+    return `http://${hostname}:5000`;
   }
 
   return FALLBACK_PROD_API_ORIGIN;

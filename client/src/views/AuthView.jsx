@@ -17,6 +17,9 @@ const AuthView = () => {
           <p className="auth-simple__copy">
             Sign in or create an account to connect with teams.
           </p>
+          <div className="auth-simple__notice">
+            Use your college email ending with <strong>@bmsce.ac.in</strong> for sign in and sign up.
+          </div>
         </div>
 
         <div className="auth-panel">

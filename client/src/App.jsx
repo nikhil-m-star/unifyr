@@ -109,8 +109,10 @@ const AppContent = () => {
     const primaryEmail = (user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '').toLowerCase();
     if (primaryEmail && !primaryEmail.endsWith('@bmsce.ac.in')) {
       hasTriggeredDomainSignOut.current = true;
-      toast.error('Please use an email with bmsce.ac.in.');
-      signOut({ redirectUrl: '/auth' });
+      toast.error('Please use an email with bmsce.ac.in.', { duration: 5000 });
+      setTimeout(() => {
+        signOut({ redirectUrl: '/auth' });
+      }, 5000);
     }
   }, [isLoaded, isSignedIn, user, signOut]);
 

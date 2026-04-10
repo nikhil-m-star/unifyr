@@ -148,6 +148,14 @@ require('./sockets/matchmakingSocket')(io);
 notificationService.init(io);
 
 // Health Check with DB ping
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'Unifyr backend is running.',
+    health: '/health',
+  });
+});
+
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');

@@ -116,6 +116,7 @@ const findBestMatch = async (userId) => {
     JOIN users u ON u.id = wcp.user_id
     WHERE wcp.match_status = 'searching'
       AND wcp.user_id != $1
+      AND u.clerk_id NOT LIKE 'demo_%'
       ${pastMatchesFilter}
       AND wcp.user_id NOT IN (
         SELECT user_1_id FROM chat_sessions WHERE user_2_id = $1
@@ -198,6 +199,7 @@ const findBestMatch = async (userId) => {
       SELECT id as user_id, name, profile_pic, role
       FROM users
       WHERE id != $1
+        AND clerk_id NOT LIKE 'demo_%'
         ${pastMatchesUsersFilter}
         AND id NOT IN (
           SELECT user_1_id FROM chat_sessions WHERE user_2_id = $1
@@ -221,6 +223,7 @@ const findBestMatch = async (userId) => {
         SELECT id as user_id, name, profile_pic, role
         FROM users
         WHERE id != $1
+          AND clerk_id NOT LIKE 'demo_%'
         ORDER BY RANDOM()
         LIMIT 1
       `;

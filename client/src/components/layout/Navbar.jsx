@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Radar, Link2, User } from 'lucide-react';
+import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Link2, User } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton, useAuth } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -33,12 +33,6 @@ const NavItems = ({
       <Link2 size={18} />
       Connect
     </NavLink>
-    <SignedIn>
-      <NavLink to="/ready" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
-        <Radar size={18} />
-        Social
-      </NavLink>
-    </SignedIn>
     <SignedIn>
       <NavLink to="/messages" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
         <MessageSquare size={18} />
@@ -117,7 +111,6 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   ];
 
   const signedInPrimaryNavItems = [
-    { to: '/ready', label: 'Social', icon: Radar },
     { to: '/messages', label: 'Chats', icon: MessageSquare },
     { to: '/notifications', label: 'Alerts', icon: Bell },
   ];
@@ -131,7 +124,6 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   ];
 
   const signedOutPrimaryNavItems = [
-    { to: '/ready', label: 'Social', icon: Radar },
     { to: '/auth', label: 'Sign In', icon: LogIn },
   ];
 

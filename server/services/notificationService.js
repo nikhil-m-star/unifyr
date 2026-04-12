@@ -5,18 +5,100 @@ const init = (io) => {
   ioInstance = io;
 };
 
-const notifyRequestAccepted = (applicantId, teamName) => {
+const createNotification = async ({
+  userId,
+  type = 'general',
+  title = 'Notification',
+  message = '',
+  sessionId = null,
+}) => {
+  const query = `
+    INSERT INTO notifications (user_id, type, title, message, session_id)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, user_id, type, title, message, session_id, is_read, created_at
+  `;
+  const { rows } = await pool.query(query, [userId, type, title, message, sessionId]);
+  return rows[0];
+};
+
+const getNotifications = async (userId, limit = 100) => {
+  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+  const query = `
+    SELECT id, user_id, type, title, message, session_id, is_read, created_at
+    FROM notifications
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(query, [userId, safeLimit]);
+  return rows;
+};
+
+const markNotificationRead = async (userId, notificationId) => {
+  const query = `
+    UPDATE notifications
+    SET is_read = TRUE
+    WHERE id = $1 AND user_id = $2
+    RETURNING id
+  `;
+  const { rows } = await pool.query(query, [notificationId, userId]);
+  return rows[0] || null;
+};
+
+const markAllNotificationsRead = async (userId) => {
+  const query = `
+    UPDATE notifications
+    SET is_read = TRUE
+    WHERE user_id = $1 AND is_read = FALSE
+  `;
+  await pool.query(query, [userId]);
+};
+
+const deleteNotification = async (userId, notificationId) => {
+  const query = `
+    DELETE FROM notifications
+    WHERE id = $1 AND user_id = $2
+    RETURNING id
+  `;
+  const { rows } = await pool.query(query, [notificationId, userId]);
+  return rows[0] || null;
+};
+
+const clearNotifications = async (userId) => {
+  await pool.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+};
+
+const notifyRequestAccepted = async (applicantId, teamName, sessionId = null) => {
   if (!ioInstance) {
     console.error('Notification Service: ioInstance not initialized');
     return;
   }
 
-  ioInstance.to(`user:${applicantId}`).emit('notification:acceptance', {
+  const payload = {
     type: 'request_accepted',
     title: 'Pitch Accepted! 🎉',
     message: `Your pitch to join "${teamName}" was accepted. You can now chat!`,
+    sessionId,
     timestamp: new Date().toISOString()
-  });
+  };
+
+  try {
+    const saved = await createNotification({
+      userId: applicantId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+      sessionId,
+    });
+    ioInstance.to(`user:${applicantId}`).emit('notification:acceptance', {
+      ...payload,
+      id: saved.id,
+      read: saved.is_read,
+    });
+  } catch (error) {
+    console.error('[Notification] Failed to persist acceptance notification:', error.message);
+    ioInstance.to(`user:${applicantId}`).emit('notification:acceptance', payload);
+  }
 };
 
 const notifyNewMessage = async (recipientId, senderName, content, sessionId) => {
@@ -33,6 +115,20 @@ const notifyNewMessage = async (recipientId, senderName, content, sessionId) => 
     sessionId: sessionId,
     timestamp: new Date().toISOString()
   };
+
+  try {
+    const saved = await createNotification({
+      userId: recipientId,
+      type: notificationPayload.type,
+      title: notificationPayload.title,
+      message: notificationPayload.message,
+      sessionId,
+    });
+    notificationPayload.id = saved.id;
+    notificationPayload.read = saved.is_read;
+  } catch (error) {
+    console.error('[Notification] Failed to persist message notification:', error.message);
+  }
 
   // Try to deliver via socket
   const room = ioInstance.sockets.adapter.rooms.get(`user:${recipientId}`);
@@ -97,26 +193,44 @@ const markOfflineMessagesDelivered = async (messageIds) => {
   }
 };
 
-const notifyNewJoinRequest = (recipientId, senderName, teamName, pitchSnippet) => {
+const notifyNewJoinRequest = async (recipientId, senderName, teamName, pitchSnippet) => {
   if (!ioInstance) {
     console.error('Notification Service: ioInstance not initialized');
     return;
   }
 
-  ioInstance.to(`user:${recipientId}`).emit('notification:join_request', {
+  const payload = {
     type: 'new_join_request',
     title: 'New Pitch Received! 🚀',
     message: `${senderName} wants to join "${teamName}": "${pitchSnippet}"`,
     senderName,
     teamName,
     timestamp: new Date().toISOString()
-  });
+  };
+
+  try {
+    const saved = await createNotification({
+      userId: recipientId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+    });
+    ioInstance.to(`user:${recipientId}`).emit('notification:join_request', {
+      ...payload,
+      id: saved.id,
+      read: saved.is_read,
+      sessionId: null,
+    });
+  } catch (error) {
+    console.error('[Notification] Failed to persist join request notification:', error.message);
+    ioInstance.to(`user:${recipientId}`).emit('notification:join_request', payload);
+  }
 };
 
-const notifyWordConnectMatch = (targetUserId, requesterName, requesterProfilePic, sharedCount) => {
+const notifyWordConnectMatch = async (targetUserId, requesterName, requesterProfilePic, sharedCount) => {
   if (!ioInstance) return;
 
-  ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_request', {
+  const payload = {
     type: 'wordconnect_match',
     title: '🔗 Word Connect Match!',
     message: `${requesterName} matched with you (${sharedCount} shared answers). Tap to respond!`,
@@ -124,36 +238,96 @@ const notifyWordConnectMatch = (targetUserId, requesterName, requesterProfilePic
     requesterProfilePic,
     sharedCount,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  try {
+    const saved = await createNotification({
+      userId: targetUserId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+    });
+    ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_request', {
+      ...payload,
+      id: saved.id,
+      read: saved.is_read,
+      sessionId: null,
+    });
+  } catch (error) {
+    console.error('[Notification] Failed to persist word connect match notification:', error.message);
+    ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_request', payload);
+  }
 };
 
-const notifyWordConnectAccepted = (targetUserId, accepterName, sessionId) => {
+const notifyWordConnectAccepted = async (targetUserId, accepterName, sessionId) => {
   if (!ioInstance) return;
 
-  ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_accepted', {
+  const payload = {
     type: 'wordconnect_accepted',
     title: '🎉 Match Accepted!',
     message: `${accepterName} accepted your Word Connect match! Start chatting now.`,
     accepterName,
     sessionId,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  try {
+    const saved = await createNotification({
+      userId: targetUserId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+      sessionId,
+    });
+    ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_accepted', {
+      ...payload,
+      id: saved.id,
+      read: saved.is_read,
+    });
+  } catch (error) {
+    console.error('[Notification] Failed to persist word connect accepted notification:', error.message);
+    ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_accepted', payload);
+  }
 };
 
-const notifyWordConnectDeclined = (targetUserId, declinerName) => {
+const notifyWordConnectDeclined = async (targetUserId, declinerName) => {
   if (!ioInstance) return;
 
-  ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_declined', {
+  const payload = {
     type: 'wordconnect_declined',
     title: 'Match Update',
     message: `Your Word Connect match didn't work out. Try again to find someone new!`,
     declinerName,
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  try {
+    const saved = await createNotification({
+      userId: targetUserId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+    });
+    ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_declined', {
+      ...payload,
+      id: saved.id,
+      read: saved.is_read,
+      sessionId: null,
+    });
+  } catch (error) {
+    console.error('[Notification] Failed to persist word connect declined notification:', error.message);
+    ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_declined', payload);
+  }
 };
 
 module.exports = {
   init,
+  createNotification,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+  clearNotifications,
   notifyRequestAccepted,
   notifyNewMessage,
   notifyNewJoinRequest,

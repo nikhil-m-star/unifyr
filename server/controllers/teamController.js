@@ -125,7 +125,11 @@ const processJoinRequest = async (req, res) => {
         const updatedRequest = await joinRequestModel.updateRequestStatus(requestId, status, chatSession.id);
         
         // Notify the applicant
-        notificationService.notifyRequestAccepted(request.sender_id, team.team_name || team.teamName);
+        notificationService.notifyRequestAccepted(
+          request.sender_id,
+          team.team_name || team.teamName,
+          chatSession.id
+        );
         
         return res.status(200).json({ 
           message: 'Request accepted and chat room created', 

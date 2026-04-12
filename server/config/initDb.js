@@ -103,6 +103,17 @@ const createTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(80) DEFAULT 'general',
+        title VARCHAR(255) NOT NULL,
+        message TEXT,
+        session_id INT REFERENCES chat_sessions(id) ON DELETE SET NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id);
     CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
     CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
@@ -112,6 +123,8 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_teams_creator ON teams(creator_id);
     CREATE INDEX IF NOT EXISTS idx_join_requests_team ON join_requests(team_id);
     CREATE INDEX IF NOT EXISTS idx_join_requests_sender ON join_requests(sender_id);
+    CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
 
     -- Word Connect: MCQ-based personality matching
     CREATE TABLE IF NOT EXISTS word_connect_profiles (

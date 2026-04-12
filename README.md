@@ -1,52 +1,111 @@
-# Unifyr Events
+# Campus Unifyr — BMSCE Team Discovery & Collaboration
 
-Campus events and team matching app with a React + Vite client and an Express + Socket.IO server.
+![Campus Unifyr Banner](banner.png)
 
-## Stack
+> **Accelerate Collaboration. Innovate Together.**  
+> The premier team-finding and event discovery platform for **BMS College of Engineering** students.
 
-- `client/`: React 19, Vite, Clerk, Framer Motion
-- `server/`: Express 5, Postgres, Clerk, Socket.IO
+[![Live Demo](https://img.shields.io/badge/Live-Demo-purple?style=for-the-badge&logo=vercel)](https://campusunifyr.vercel.app)
+[![Node.js](https://img.shields.io/badge/v20.0.0-Node.js-green?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
+[![React](https://img.shields.io/badge/v19.0.0-React-blue?style=for-the-badge&logo=react)](https://reactjs.org)
 
-## Setup
+---
 
-1. Create the frontend env file:
-   - Copy [`client/.env.example`](/Users/nikhilm/Desktop/Programming/Web Dev/Events/client/.env.example) to `client/.env.local`
-2. Create the backend env file:
-   - Copy [`server/.env.example`](/Users/nikhilm/Desktop/Programming/Web Dev/Events/server/.env.example) to `server/.env`
-3. Install dependencies:
-   - `cd client && npm install`
-   - `cd ../server && npm install`
-4. Initialize the database schema:
-   - `cd server && npm run init-db`
-5. Start the app:
-   - `cd server && npm run dev`
-   - `cd client && npm run dev`
+## 🌟 Overview
 
-## Notes
+**Campus Unifyr** is a high-performance, real-time platform designed to bridge the gap between idea and execution for students at BMSCE. Whether you are looking for a backend developer for a hackathon, a lead singer for Utsav, or a project partner for a lab, Unifyr connects you with the right people at the right time.
 
-- The app uses Clerk end to end for authentication.
-- Protected REST endpoints expect a Clerk session token in the `Authorization` header.
-- The radar matchmaking socket also verifies the Clerk session token and syncs first-time users into Postgres automatically.
-- The frontend expects the API server at `http://localhost:5000` unless `VITE_API_ORIGIN` is set.
+### Key Features
 
-## Render Backend Deployment
+-   🎯 **Radar Matchmaking:** Real-time, proximity-aware (campus-wide) teammate search.
+-   🤖 **AI Event Recommendations:** Personalized event shortlists powered by **Llama 3.3** based on your skills and interests.
+-   💬 **Live Pulse Messaging:** Real-time communication via Socket.io with persistence for team collaborations.
+-   🎭 **Event Hub:** Discover live BMSCE campus events, hackathons, and cultural performances in one unified dashboard.
+-   🛡️ **Campus Security:** Exclusive access for `@bmsce.ac.in` emails, secured by **Clerk**.
+-   🚀 **PWA Support:** Install Unifyr on your mobile device for a native-like campus experience.
 
-1. Create a `Web Service` on Render from this repo.
-2. Set Root Directory to `server` (or keep repo root and set start command to `npm start --prefix server`).
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Add environment variables on Render:
-   - `NODE_ENV=production`
-   - `DATABASE_URL=...`
-   - `CLERK_SECRET_KEY=...`
-   - `CORS_ORIGIN=https://campusunifyr.vercel.app,https://*.vercel.app`
-   - `ADMIN_EMAILS=nikhilm.cs24@bmsce.ac.in`
-   - `GROQ_API_KEY=...`
-   - `GROQ_MODEL=llama-3.3-70b-versatile`
-6. In Vercel frontend env, set:
-   - `VITE_API_ORIGIN=https://<your-render-service>.onrender.com`
+---
 
-### Mobile Network Notes
+## 🛠️ Tech Stack
 
-- For deployed usage (phone on mobile data/Wi-Fi), frontend talks to Render over public HTTPS, so it works as long as `CORS_ORIGIN` includes your frontend domain.
-- For local LAN testing on phone, opening frontend from `http://<your-laptop-ip>:5173` now auto-targets backend at `http://<your-laptop-ip>:5000` in development.
+### Frontend
+-   **Framework:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+-   **Styling:** Vanilla CSS + [Framer Motion](https://www.framer.com/motion/) (Animations)
+-   **Auth:** [Clerk](https://clerk.com/) (Identity Management)
+-   **Icons:** [Lucide React](https://lucide.dev/)
+-   **Real-time:** [Socket.io-client](https://socket.io/docs/v4/client-api/)
+
+### Backend
+-   **Runtime:** Node.js (Express 5.2)
+-   **Database:** [PostgreSQL](https://www.postgresql.org/) (via `pg`)
+-   **Intelligence:** [Groq AI](https://groq.com/) (Llama-3.3-70b-versatile)
+-   **Real-time:** [Socket.io](https://socket.io/)
+-   **Security:** Helmet, HPP, Express Rate Limit
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+-   Node.js >= 20.0.0
+-   PostgreSQL instance
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/nikhil-m-star/unifyr.git
+    cd unifyr
+    ```
+
+2.  **Environment Setup:**
+    -   Configure `client/.env.local` (see `client/.env.example`)
+    -   Configure `server/.env` (see `server/.env.example`)
+
+3.  **Install Dependencies:**
+    ```bash
+    # Install for both client and server
+    cd client && npm install
+    cd ../server && npm install
+    ```
+
+4.  **Database Migration:**
+    ```bash
+    cd server
+    npm run init-db
+    ```
+
+5.  **Run Locally:**
+    ```bash
+    # Terminal 1 (Backend)
+    cd server && npm run dev
+
+    # Terminal 2 (Frontend)
+    cd client && npm run dev
+    ```
+
+---
+
+## 🌍 Deployment
+
+### Backend (Render)
+1.  Connect this repo to **Render** as a "Web Service".
+2.  Set **Root Directory** to `server`.
+3.  Add required ENV variables (`DATABASE_URL`, `CLERK_SECRET_KEY`, `GROQ_API_KEY`, etc.).
+
+### Frontend (Vercel)
+1.  Connect this repo to **Vercel**.
+2.  Set **Root Directory** to `client`.
+3.  Set `VITE_API_ORIGIN` to your Render service URL.
+
+---
+
+## 📜 License & Acknowledgments
+
+-   Built for the students of **BMS College of Engineering**.
+-   Core Developer: **Nikhil M**
+-   Powered by the spirit of **Utsav** and BMSCE innovation.
+
+---
+
+<p align="center">Made with 💜 for BMSCE</p>

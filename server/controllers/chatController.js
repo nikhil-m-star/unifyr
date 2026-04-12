@@ -1,5 +1,6 @@
 const chatModel = require('../models/chatModel');
 const notificationService = require('../services/notificationService');
+const userModel = require('../models/userModel');
 
 const getSessionMessages = async (req, res) => {
   try {
@@ -109,10 +110,44 @@ const getPendingOfflineMessages = async (req, res) => {
   }
 };
 
+const startDirectChat = async (req, res) => {
+  try {
+    const requesterId = req.dbUser.id;
+    const targetUserId = Number(req.params.userId);
+
+    if (Number.isNaN(targetUserId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    if (targetUserId === requesterId) {
+      return res.status(400).json({ message: 'You cannot start a chat with yourself.' });
+    }
+
+    const partner = await userModel.getPublicUserById(targetUserId);
+    if (!partner) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    let session = await chatModel.getChatSessionByUsers(requesterId, targetUserId);
+    if (!session) {
+      session = await chatModel.createChatSession(requesterId, targetUserId, 'Teammate Connect');
+    }
+
+    return res.status(200).json({
+      sessionId: session.id,
+      partner,
+    });
+  } catch (error) {
+    console.error('Failed to start direct chat:', error);
+    return res.status(500).json({ message: 'Failed to start chat session' });
+  }
+};
+
 module.exports = {
   getSessionMessages,
   getUserSessions,
   deleteSession,
   deleteMessage,
   getPendingOfflineMessages,
+  startDirectChat,
 };

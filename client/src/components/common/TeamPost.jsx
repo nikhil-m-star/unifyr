@@ -1,15 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { Users, ExternalLink, ArrowRight } from 'lucide-react';
+import { ArrowRight, MessageSquare } from 'lucide-react';
 import useIsMobile from '../../hooks/useIsMobile';
+import axios from '../../api/axios';
+import { toast } from 'react-hot-toast';
 
 const TeamPost = ({ team }) => {
   const navigate = useNavigate();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const isMobile = useIsMobile();
   const reduceMotion = useReducedMotion();
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const handleChat = async () => {
+    if (!isSignedIn) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!team.creator_id) {
+      toast.error('Chat is unavailable for this post right now.');
+      return;
+    }
+
+    try {
+      setChatLoading(true);
+      const token = await getToken();
+      const response = await axios.post(
+        `/chat/direct/${team.creator_id}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const { sessionId, partner } = response.data || {};
+      if (!sessionId) {
+        throw new Error('Missing session id');
+      }
+      navigate(`/messages/${sessionId}`, { state: { partner } });
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Could not open chat right now.';
+      toast.error(message);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   return (
     <motion.article 
@@ -74,7 +109,16 @@ const TeamPost = ({ team }) => {
       </div>
 
       <div className="team-card__footer">
-        <div style={{ flex: 1 }} />
+        <button
+          type="button"
+          className="btn-secondary"
+          style={{ padding: '8px 14px', borderRadius: '12px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+          onClick={handleChat}
+          disabled={chatLoading}
+        >
+          <MessageSquare size={14} />
+          {chatLoading ? 'Opening...' : 'Chat'}
+        </button>
         <button
           type="button"
           className="btn-primary"

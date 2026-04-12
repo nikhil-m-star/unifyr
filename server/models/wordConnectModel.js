@@ -75,8 +75,8 @@ const getProfileByUserId = async (userId) => {
         }
       }
       
-      // If they had answers but shared less than the 3 question minimum, they were also formally a serendipity fallback
-      if (sharedCount < 3) {
+      // If they had answers but shared less than 1 (no shares), they were also formally a serendipity fallback
+      if (sharedCount < 1) {
         isFallbackRandom = true;
       }
     }
@@ -144,7 +144,7 @@ const findBestMatch = async (userId) => {
     }
 
     const score = sharedCount / TOTAL_QUESTIONS;
-    if (score >= 0.5) {
+    if (sharedCount >= 1) {
       validCandidates.push({
         profileId: candidate.id,
         userId: candidate.user_id,

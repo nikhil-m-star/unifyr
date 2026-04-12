@@ -27,14 +27,13 @@ const ROUTE_SEO = {
     },
   },
   '/recommendations': {
-    title: 'AI Event Recommendations | Campus Unifyr',
-    description:
-      'Tell us your interests and get AI-powered shortlists of the best active BMSCE events matched just for you.',
+    title: 'Word Connect — Find Your Match at BMSCE',
+    description: 'Answer 6 quick questions to find your perfect match on campus. Connect with fellow students based on your vibe, goals, and energy through Word Connect.',
     robots: 'index, follow',
     structuredData: {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
-      name: 'AI Event Recommendations',
+      name: 'Word Connect',
       url: 'https://campusunifyr.vercel.app/recommendations',
     },
   },

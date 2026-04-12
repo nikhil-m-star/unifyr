@@ -113,6 +113,45 @@ const notifyNewJoinRequest = (recipientId, senderName, teamName, pitchSnippet) =
   });
 };
 
+const notifyWordConnectMatch = (targetUserId, requesterName, requesterProfilePic, sharedCount) => {
+  if (!ioInstance) return;
+
+  ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_request', {
+    type: 'wordconnect_match',
+    title: '🔗 Word Connect Match!',
+    message: `${requesterName} matched with you (${sharedCount} shared answers). Tap to respond!`,
+    requesterName,
+    requesterProfilePic,
+    sharedCount,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+const notifyWordConnectAccepted = (targetUserId, accepterName, sessionId) => {
+  if (!ioInstance) return;
+
+  ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_accepted', {
+    type: 'wordconnect_accepted',
+    title: '🎉 Match Accepted!',
+    message: `${accepterName} accepted your Word Connect match! Start chatting now.`,
+    accepterName,
+    sessionId,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+const notifyWordConnectDeclined = (targetUserId, declinerName) => {
+  if (!ioInstance) return;
+
+  ioInstance.to(`user:${targetUserId}`).emit('wordconnect:match_declined', {
+    type: 'wordconnect_declined',
+    title: 'Match Update',
+    message: `Your Word Connect match didn't work out. Try again to find someone new!`,
+    declinerName,
+    timestamp: new Date().toISOString(),
+  });
+};
+
 module.exports = {
   init,
   notifyRequestAccepted,
@@ -120,5 +159,8 @@ module.exports = {
   notifyNewJoinRequest,
   storeOfflineMessage,
   getOfflineMessages,
-  markOfflineMessagesDelivered
+  markOfflineMessagesDelivered,
+  notifyWordConnectMatch,
+  notifyWordConnectAccepted,
+  notifyWordConnectDeclined,
 };

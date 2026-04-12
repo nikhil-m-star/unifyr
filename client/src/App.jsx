@@ -188,6 +188,62 @@ const AppContent = () => {
         );
       });
 
+      // Word Connect notifications
+      socketInstance.on('wordconnect:match_request', (data) => {
+        addNotification({
+          type: 'wordconnect_match',
+          title: data.title,
+          message: data.message,
+          timestamp: data.timestamp,
+        });
+
+        toast(
+          (t) => (
+            <div
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate('/recommendations');
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ fontWeight: 700 }}>{data.title}</div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.message}</div>
+            </div>
+          ),
+          { duration: 10000, icon: '🔗' }
+        );
+      });
+
+      socketInstance.on('wordconnect:match_accepted', (data) => {
+        addNotification({
+          type: 'wordconnect_accepted',
+          title: data.title,
+          message: data.message,
+          sessionId: data.sessionId,
+          timestamp: data.timestamp,
+        });
+
+        toast.success(
+          (t) => (
+            <div
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate(`/messages/${data.sessionId}`);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ fontWeight: 700 }}>{data.title}</div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{data.message}</div>
+            </div>
+          ),
+          { duration: 8000, icon: '🎉' }
+        );
+      });
+
+      socketInstance.on('wordconnect:match_declined', (data) => {
+        toast(data.message, { icon: '👋', duration: 5000 });
+      });
+
       setSocket(socketInstance);
     };
 

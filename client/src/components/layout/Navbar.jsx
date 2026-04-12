@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Radar, Sparkles, User } from 'lucide-react';
+import { Bell, Compass, Edit, House, LogIn, MoreHorizontal, Shield, MessageSquare, Radar, Link2, User } from 'lucide-react';
 import { SignedIn, SignedOut, UserButton, useAuth } from '@clerk/clerk-react';
 import CreateTeamModal from '../common/CreateTeamModal';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -30,8 +30,8 @@ const NavItems = ({
       Events
     </NavLink>
     <NavLink to="/recommendations" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
-      <Sparkles size={18} />
-      AI
+      <Link2 size={18} />
+      Connect
     </NavLink>
     <SignedIn>
       <NavLink to="/ready" onClick={onClose} className={isMobile ? 'nav-link nav-link--mobile' : navLinkClass}>
@@ -113,13 +113,13 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
   const baseNavItems = [
     { to: '/', label: 'Home', icon: House },
     { to: '/events/active', label: 'Events', icon: Compass },
+    { to: '/recommendations', label: 'Connect', icon: Link2 },
   ];
 
   const signedInPrimaryNavItems = [
     { to: '/ready', label: 'Social', icon: Radar },
     { to: '/messages', label: 'Chats', icon: MessageSquare },
     { to: '/notifications', label: 'Alerts', icon: Bell },
-    { to: '/recommendations', label: 'AI', icon: Sparkles },
   ];
 
   const signedInOverflowNavItems = [
@@ -132,7 +132,6 @@ const Navbar = ({ onTeamCreated, unreadNotificationCount = 0, unreadMessageCount
 
   const signedOutPrimaryNavItems = [
     { to: '/ready', label: 'Social', icon: Radar },
-    { to: '/recommendations', label: 'AI', icon: Sparkles },
     { to: '/auth', label: 'Sign In', icon: LogIn },
   ];
 

@@ -123,6 +123,7 @@ const utsavRoutes = require('./routes/utsavRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const wordConnectRoutes = require('./routes/wordConnectRoutes');
 const notificationService = require('./services/notificationService');
 const chatModel = require('./models/chatModel');
 
@@ -175,6 +176,7 @@ app.use('/api/utsav', utsavRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/wordconnect', wordConnectRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

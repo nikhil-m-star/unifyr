@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
-import { ArrowLeft, ArrowRight, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Users, ChevronDown, ChevronUp, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import HeroEvent from '../components/common/HeroEvent';
 import TeamPost from '../components/common/TeamPost';
@@ -249,7 +249,7 @@ const HomeView = ({ refreshToken = 0 }) => {
         <div ref={carouselRef} className="featured-carousel hide-scrollbar">
           {filteredEvents.map((event, index) => (
             <motion.div
-              key={event.id}
+              key={event.id || `featured-event-${index}`}
               className="featured-carousel__item"
               initial={isMobile ? false : { opacity: 0, x: 18 }}
               animate={{ opacity: 1, x: 0 }}
@@ -265,7 +265,28 @@ const HomeView = ({ refreshToken = 0 }) => {
         </div>
       )}
 
-      <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center', gap: '16px' }}>
+        <button 
+          type="button" 
+          className="btn-primary" 
+          style={{ 
+            padding: '14px 28px', 
+            fontSize: '1rem', 
+            borderRadius: '14px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            background: 'linear-gradient(135deg, #863bff 0%, #6320c9 100%)',
+            color: '#fff',
+            border: 'none',
+            boxShadow: '0 8px 24px rgba(134, 59, 255, 0.25)'
+          }}
+          onClick={() => {
+            navigate('/recommendations');
+          }}
+        >
+          <Link2 size={18} /> Connect
+        </button>
         <button 
           type="button" 
           className="btn-primary" 
@@ -425,8 +446,8 @@ const HomeView = ({ refreshToken = 0 }) => {
 
         {groupedTeams.length > 0 ? (
           <div className="event-groups">
-            {groupedTeams.map((group) => (
-              <MiniEventGroup key={group.eventName} group={group} isMobile={isMobile} />
+            {groupedTeams.map((group, index) => (
+              <MiniEventGroup key={group.eventName || `group-${index}`} group={group} isMobile={isMobile} />
             ))}
           </div>
         ) : (

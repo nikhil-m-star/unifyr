@@ -112,11 +112,26 @@ const createTables = async () => {
     CREATE INDEX IF NOT EXISTS idx_teams_creator ON teams(creator_id);
     CREATE INDEX IF NOT EXISTS idx_join_requests_team ON join_requests(team_id);
     CREATE INDEX IF NOT EXISTS idx_join_requests_sender ON join_requests(sender_id);
+
+    -- Word Connect: MCQ-based personality matching
+    CREATE TABLE IF NOT EXISTS word_connect_profiles (
+        id SERIAL PRIMARY KEY,
+        user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        answers JSONB NOT NULL,
+        matched_with INT REFERENCES users(id) ON DELETE SET NULL,
+        match_status VARCHAR(20) DEFAULT 'searching',
+        past_matches JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_wc_profiles_user ON word_connect_profiles(user_id);
+    CREATE INDEX IF NOT EXISTS idx_wc_profiles_status ON word_connect_profiles(match_status);
   `;
 
   try {
     await pool.query(queryText);
     await pool.query('ALTER TABLE teams ADD COLUMN IF NOT EXISTS event_name VARCHAR(255)');
+    await pool.query("ALTER TABLE word_connect_profiles ADD COLUMN IF NOT EXISTS past_matches JSONB DEFAULT '[]'::jsonb");
     console.log('Tables created or verified successfully');
   } catch (err) {
     console.error('Error creating tables:', err);

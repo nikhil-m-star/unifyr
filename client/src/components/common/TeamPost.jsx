@@ -111,12 +111,23 @@ const TeamPost = ({ team }) => {
       <div className="team-card__footer">
         <button
           type="button"
-          className="btn-secondary"
-          style={{ padding: '8px 14px', borderRadius: '12px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+          className="btn-primary"
+          style={{
+            padding: '14px 28px',
+            fontSize: '1rem',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, #863bff 0%, #6320c9 100%)',
+            color: '#fff',
+            border: 'none',
+            boxShadow: '0 8px 24px rgba(134, 59, 255, 0.25)',
+          }}
           onClick={handleChat}
           disabled={chatLoading}
         >
-          <MessageSquare size={14} />
+          <MessageSquare size={18} />
           {chatLoading ? 'Opening...' : 'Chat'}
         </button>
         <button

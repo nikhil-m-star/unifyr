@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 
 const TOTAL_QUESTIONS = 6;
+const MIN_SHARED_FOR_STRONG_MATCH = Math.ceil(TOTAL_QUESTIONS * 0.5);
 
 const upsertProfile = async (userId, answers) => {
   const client = await pool.connect();
@@ -92,7 +93,7 @@ const getProfileByUserId = async (userId) => {
 
 /**
  * Find the best match for a user among all "searching" profiles.
- * Returns the top-scoring profile with ≥ 50% shared answers, or null.
+ * Returns a strongest candidate (>= 50% shared answers) when available.
  */
 const findBestMatch = async (userId) => {
   const myProfile = await getProfileByUserId(userId);
@@ -128,7 +129,7 @@ const findBestMatch = async (userId) => {
   const { rows } = await pool.query(query, [userId]);
 
   let bestMatch = null;
-  const validCandidates = [];
+  const strongCandidates = [];
 
   for (const candidate of rows) {
     const candidateAnswers = typeof candidate.answers === 'string'
@@ -144,8 +145,8 @@ const findBestMatch = async (userId) => {
     }
 
     const score = sharedCount / TOTAL_QUESTIONS;
-    if (sharedCount >= 1) {
-      validCandidates.push({
+    if (sharedCount >= MIN_SHARED_FOR_STRONG_MATCH) {
+      strongCandidates.push({
         profileId: candidate.id,
         userId: candidate.user_id,
         name: candidate.name,
@@ -157,17 +158,19 @@ const findBestMatch = async (userId) => {
     }
   }
 
-  if (validCandidates.length > 0) {
-    bestMatch = validCandidates[Math.floor(Math.random() * validCandidates.length)];
+  if (strongCandidates.length > 0) {
+    const highestScore = Math.max(...strongCandidates.map((candidate) => candidate.score));
+    const topCandidates = strongCandidates.filter((candidate) => candidate.score === highestScore);
+    bestMatch = topCandidates[Math.floor(Math.random() * topCandidates.length)];
   }
 
-  // Fallback 1: If no one met the 50% threshold, match with a random searching user
+  // Fallback 1: If no one met the threshold, match with a random searching user
   if (!bestMatch && rows.length > 0) {
     const randomCandidate = rows[Math.floor(Math.random() * rows.length)];
     const candidateAnswers = typeof randomCandidate.answers === 'string'
       ? JSON.parse(randomCandidate.answers)
       : randomCandidate.answers;
-    
+
     let sharedCount = 0;
     for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
       const key = `q${i}`;
@@ -175,7 +178,7 @@ const findBestMatch = async (userId) => {
         sharedCount++;
       }
     }
-    
+
     bestMatch = {
       profileId: randomCandidate.id,
       userId: randomCandidate.user_id,
@@ -190,8 +193,8 @@ const findBestMatch = async (userId) => {
 
   // Fallback 2: If absolutely NO ONE is searching, match with a random user on the platform
   if (!bestMatch) {
-    const pastMatchesUsersFilter = pastMatchesArr.length > 0 
-      ? `AND id NOT IN (${pastMatchesArr.join(',')})` 
+    const pastMatchesUsersFilter = pastMatchesArr.length > 0
+      ? `AND id NOT IN (${pastMatchesArr.join(',')})`
       : '';
 
     // Try to find someone new we haven't chatted with OR matched with recently
@@ -210,14 +213,14 @@ const findBestMatch = async (userId) => {
       LIMIT 1
     `;
     let { rows: randomRows } = await pool.query(randomUserQuery, [userId]);
-    
-    // Cycle Logic: If we've exhausted all possible NEW users, but we HAVE past matches, reset past matches and cycle anew!
+
+    // Cycle logic: if we've exhausted all new users but have past matches, reset and retry.
     if (randomRows.length === 0 && pastMatchesArr.length > 0) {
       await pool.query(`UPDATE word_connect_profiles SET past_matches = '[]'::jsonb WHERE user_id = $1`, [userId]);
       return await findBestMatch(userId);
     }
 
-    // If we've chatted with literally everyone, strictly fallback to anyone else (even if chatted)
+    // If we've chatted with literally everyone, fallback to anyone else.
     if (randomRows.length === 0) {
       const fallbackQuery = `
         SELECT id as user_id, name, profile_pic, role

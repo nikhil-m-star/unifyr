@@ -27,9 +27,15 @@ const findMatch = async (userId) => {
   return null;
 };
 
+const isUserInQueue = (userId) => matchmakingQueue.has(userId.toString());
+
+const getQueueSize = () => matchmakingQueue.size;
+
 module.exports = {
   enqueueUser,
   dequeueUser,
   findMatch,
   normalizeTopic,
+  isUserInQueue,
+  getQueueSize,
 };

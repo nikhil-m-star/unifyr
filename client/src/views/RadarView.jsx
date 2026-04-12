@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Radar as RadarIcon, Users, MessageSquare, X, Zap, Loader2, ShieldCheck } from 'lucide-react';
+import { Radar as RadarIcon, Users, MessageSquare, X, Zap, Loader2, ShieldCheck, UserPlus } from 'lucide-react';
 import axios, { getApiOrigin } from '../api/axios';
 import GlassCard from '../components/common/GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -16,10 +16,24 @@ const RadarView = () => {
   const [pendingMatchId, setPendingMatchId] = useState(null);
   const [activeUsers, setActiveUsers] = useState([]);
   const [totalActiveCount, setTotalActiveCount] = useState(0);
+  const [connectRequest, setConnectRequest] = useState(null); // { matchId, requesterName, requesterProfilePic, requesterId }
   const socketRef = useRef(null);
   const { getToken, isSignedIn } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  const acceptConnectRequest = useCallback(() => {
+    if (!connectRequest || !socketRef.current) return;
+    socketRef.current.emit('chat:accept', { matchId: connectRequest.matchId });
+    toast('Connecting...', { icon: '⏳' });
+    setConnectRequest(null);
+  }, [connectRequest]);
+
+  const declineConnectRequest = useCallback(() => {
+    if (!connectRequest || !socketRef.current) return;
+    socketRef.current.emit('chat:decline', { matchId: connectRequest.matchId });
+    setConnectRequest(null);
+  }, [connectRequest]);
 
   // Socket Connection
   useEffect(() => {
@@ -40,24 +54,50 @@ const RadarView = () => {
           setPartner(matchedPartner || null);
           setSessionId(matchedSessionId || null);
           setStatus('matched');
+          setConnectRequest(null); // Clear any incoming request overlay
         });
 
-        socket.on('match_pending', ({ matchId, partnerName, partnerProfilePic }) => {
-          console.log('[Radar] Match pending:', matchId);
+        socket.on('match_pending', ({ matchId, partnerName, partnerProfilePic, isDirectRequest }) => {
+          console.log('[Radar] Match pending:', matchId, isDirectRequest ? '(direct)' : '(queue)');
           setPendingMatchId(matchId);
           setPartner({ name: partnerName, profile_pic: partnerProfilePic });
-          setStatus('pending');
+          // For direct requests, the scanner auto-accepts, so show a "waiting for response" state instead of pending
+          if (isDirectRequest) {
+            setStatus('waiting_response');
+          } else {
+            setStatus('pending');
+          }
         });
 
         socket.on('match_cancelled', ({ reason }) => {
           console.log('[Radar] Match cancelled:', reason);
           setStatus((prev) => {
-            if (prev === 'pending') {
-              toast.error(reason === 'timeout' ? 'Match connection timed out.' : 'Match declined.');
+            if (prev === 'pending' || prev === 'waiting_response') {
+              toast.error(reason === 'timeout' ? 'Connection timed out.' : 'Connection declined.');
               setPartner(null);
               setPendingMatchId(null);
               return 'idle';
             }
+            return prev;
+          });
+        });
+
+        // Incoming connect request from a scanner (when this user is NOT scanning)
+        socket.on('connect_request', ({ matchId, requesterName, requesterProfilePic, requesterId }) => {
+          console.log('[Radar] Incoming connect request from:', requesterName);
+          setConnectRequest({ matchId, requesterName, requesterProfilePic, requesterId });
+        });
+
+        socket.on('connect_request_expired', ({ matchId }) => {
+          setConnectRequest((prev) => {
+            if (prev && prev.matchId === matchId) return null;
+            return prev;
+          });
+        });
+
+        socket.on('connect_request_resolved', ({ matchId }) => {
+          setConnectRequest((prev) => {
+            if (prev && prev.matchId === matchId) return null;
             return prev;
           });
         });
@@ -169,6 +209,113 @@ const RadarView = () => {
       position: 'relative',
       overflow: 'hidden'
     }}>
+      {/* Incoming connect request overlay — shown when another user scans and picks this user */}
+      <AnimatePresence>
+        {connectRequest && status === 'idle' && (
+          <motion.div
+            key="connect-request-overlay"
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 60 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            style={{
+              position: 'fixed',
+              bottom: isMobile ? '100px' : '40px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              width: isMobile ? 'calc(100% - 32px)' : '440px',
+              maxWidth: '95vw',
+            }}
+          >
+            <div style={{
+              background: 'rgba(20, 16, 28, 0.95)',
+              backdropFilter: 'blur(24px)',
+              border: '1px solid rgba(134, 59, 255, 0.4)',
+              borderRadius: '28px',
+              padding: '24px',
+              boxShadow: '0 20px 60px rgba(134, 59, 255, 0.2), 0 0 0 1px rgba(255,255,255,0.05)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #863bff 0%, #6320c9 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  padding: '2px',
+                  flexShrink: 0,
+                }}>
+                  <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', background: '#111' }}>
+                    {connectRequest.requesterProfilePic ? (
+                      <img src={connectRequest.requesterProfilePic} alt={connectRequest.requesterName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', fontWeight: 900, color: '#863bff' }}>
+                        {connectRequest.requesterName?.charAt(0) || '?'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <UserPlus size={14} style={{ color: '#863bff' }} />
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#863bff' }}>Connection Request</span>
+                  </div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {connectRequest.requesterName?.split(' ')[0] || 'Someone'} wants to chat
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={declineConnectRequest}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'}
+                >
+                  Ignore
+                </button>
+                <button
+                  type="button"
+                  onClick={acceptConnectRequest}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #863bff 0%, #6320c9 100%)',
+                    color: '#fff',
+                    fontWeight: 800,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                >
+                  Accept
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="app-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', zIndex: 10 }}>
         <AnimatePresence>
           {status === 'idle' && (
@@ -258,7 +405,7 @@ const RadarView = () => {
             </motion.div>
           )}
 
-          {status === 'waiting' && (
+          {(status === 'waiting' || status === 'waiting_response') && (
             <motion.div 
               key="waiting" 
               initial={{ opacity: 0, scale: 0.9 }} 
@@ -284,10 +431,17 @@ const RadarView = () => {
               </div>
               
               <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-                <h2 className="searching-text" style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>Scanning Radar...</h2>
+                <h2 className="searching-text" style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem' }}>
+                  {status === 'waiting_response' ? 'Request Sent...' : 'Scanning Radar...'}
+                </h2>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Searching among {totalActiveCount} active peers</span>
+                  <span>
+                    {status === 'waiting_response'
+                      ? `Waiting for ${partner?.name?.split(' ')[0] || 'them'} to accept`
+                      : `Searching among ${totalActiveCount} active peers`
+                    }
+                  </span>
                 </div>
               </div>
               

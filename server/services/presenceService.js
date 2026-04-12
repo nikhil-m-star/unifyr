@@ -51,8 +51,31 @@ const listActiveUsers = (excludeUserId = null) =>
       lastSeenAt: user.lastSeenAt,
     }));
 
+const getConnectedUser = (userId) => {
+  const user = connectedUsers.get(userId);
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    profile_pic: user.profile_pic,
+    ready_tag: user.ready_tag,
+    bio: user.bio,
+    activeSocketCount: user.socketIds.size,
+    lastSeenAt: user.lastSeenAt,
+  };
+};
+
+const getConnectedUserSocketIds = (userId) => {
+  const user = connectedUsers.get(userId);
+  if (!user) return [];
+  return [...user.socketIds];
+};
+
 module.exports = {
   upsertConnectedUser,
   removeConnectedUserSocket,
   listActiveUsers,
+  getConnectedUser,
+  getConnectedUserSocketIds,
 };

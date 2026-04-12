@@ -165,6 +165,29 @@ const AppContent = () => {
         );
       });
 
+      // Someone scanning wants to connect with this user
+      socketInstance.on('connect_request', (data) => {
+        // Only show global toast if user is NOT already on the /ready page
+        // (RadarView has its own in-page UI for this)
+        if (window.location.pathname === '/ready') return;
+
+        toast(
+          (t) => (
+            <div
+              onClick={() => {
+                toast.dismiss(t.id);
+                navigate('/ready');
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <div style={{ fontWeight: 700 }}>🔗 {data.requesterName} wants to chat</div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Tap to respond on Radar</div>
+            </div>
+          ),
+          { duration: 15000, icon: '📡' }
+        );
+      });
+
       setSocket(socketInstance);
     };
 

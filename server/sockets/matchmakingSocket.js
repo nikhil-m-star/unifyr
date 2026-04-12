@@ -1,10 +1,10 @@
 const { verifyToken } = require('@clerk/express');
-const { enqueueUser, dequeueUser, findMatch, normalizeTopic } = require('../services/matchmakingService');
+const { enqueueUser, dequeueUser, findMatch, normalizeTopic, isUserInQueue } = require('../services/matchmakingService');
 const userModel = require('../models/userModel');
 const { syncUserFromClerk } = require('../services/userSyncService');
 const chatModel = require('../models/chatModel');
 const notificationService = require('../services/notificationService');
-const { upsertConnectedUser, removeConnectedUserSocket } = require('../services/presenceService');
+const { upsertConnectedUser, removeConnectedUserSocket, listActiveUsers, getConnectedUserSocketIds } = require('../services/presenceService');
 
 const getTokenVerificationOptions = () => {
   if (process.env.CLERK_JWT_KEY) {
@@ -45,6 +45,9 @@ const deliverOfflineMessages = async (socket, userId) => {
   }
 };
 
+// How long to wait (ms) before falling back to active-user requests
+const FALLBACK_DELAY_MS = 8000;
+
 module.exports = (io) => {
   io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
@@ -64,11 +67,40 @@ module.exports = (io) => {
   });
 
   const matchCheckerIntervals = new Map();
-  const pendingMatches = new Map(); // sessionKey -> { userAId, userBId, userASocketId, userBSocketId, topic, acceptedBy: Set, timeoutId }
+  const pendingMatches = new Map(); // sessionKey -> { userAId, userBId, userASocketId, userBSocketId, topic, acceptedBy: Set, timeoutId, isDirectRequest }
+  const fallbackTimers = new Map(); // userId -> timeoutId (tracks when to start active-user fallback)
+  const directRequestCooldowns = new Map(); // `${requesterId}:${targetId}` -> timestamp (prevents spamming same user)
 
   const getSessionKey = (id1, id2) => {
     const sorted = [Number(id1), Number(id2)].sort((a, b) => a - b);
     return `${sorted[0]}:${sorted[1]}`;
+  };
+
+  /**
+   * Pick a random active user who is NOT in the scanning queue and NOT the requester.
+   * We also exclude users the requester has already sent a direct request to (cooldown).
+   */
+  const pickRandomActiveUser = (excludeUserId) => {
+    const activeUsers = listActiveUsers(excludeUserId);
+
+    // Filter out users who are currently scanning in the queue
+    const nonScanningUsers = activeUsers.filter(u => !isUserInQueue(u.id));
+
+    if (nonScanningUsers.length === 0) return null;
+
+    // Filter out users on cooldown for this requester
+    const now = Date.now();
+    const available = nonScanningUsers.filter(u => {
+      const key = `${excludeUserId}:${u.id}`;
+      const lastRequested = directRequestCooldowns.get(key);
+      // 60-second cooldown per target
+      return !lastRequested || (now - lastRequested) > 60000;
+    });
+
+    if (available.length === 0) return null;
+
+    const pick = available[Math.floor(Math.random() * available.length)];
+    return pick;
   };
 
   io.on('connection', async (socket) => {
@@ -123,6 +155,7 @@ module.exports = (io) => {
       socket.emit('queue_joined', { status: 'waiting' });
 
       const attemptMatch = async () => {
+        // Priority 1: Match with another scanner in the queue
         const match = await findMatch(userId);
         if (!match) return;
 
@@ -147,6 +180,16 @@ module.exports = (io) => {
           matchCheckerIntervals.delete(match.userId);
         }
 
+        // Clear fallback timers since we found a scanner match
+        if (fallbackTimers.has(userId)) {
+          clearTimeout(fallbackTimers.get(userId));
+          fallbackTimers.delete(userId);
+        }
+        if (fallbackTimers.has(match.userId)) {
+          clearTimeout(fallbackTimers.get(match.userId));
+          fallbackTimers.delete(match.userId);
+        }
+
         const currentUserProfile = await userModel.getPublicUserById(userId);
         const matchedUserProfile = await userModel.getPublicUserById(match.userId);
 
@@ -166,6 +209,7 @@ module.exports = (io) => {
           userBSocketId: match.socketId,
           topic: normalizedTopic,
           acceptedBy: new Set(),
+          isDirectRequest: false,
           timeoutId: setTimeout(() => {
             const m = pendingMatches.get(matchId);
             if (m) {
@@ -195,7 +239,108 @@ module.exports = (io) => {
       await attemptMatch();
       const interval = setInterval(attemptMatch, 2500);
       matchCheckerIntervals.set(userId, interval);
+
+      // --- Fallback: after FALLBACK_DELAY_MS, if still in queue, try active users ---
+      const fallbackTimer = setTimeout(async () => {
+        fallbackTimers.delete(userId);
+
+        // Only proceed if user is still in the scanning queue
+        if (!isUserInQueue(userId)) return;
+
+        const attemptActiveUserFallback = async () => {
+          // Re-check: still in queue?
+          if (!isUserInQueue(userId)) return;
+
+          const target = pickRandomActiveUser(userId);
+          if (!target) return;
+
+          const sessionKey = getSessionKey(userId, target.id);
+          if (pendingMatches.has(sessionKey)) return;
+
+          // Set cooldown so we don't spam same user
+          directRequestCooldowns.set(`${userId}:${target.id}`, Date.now());
+
+          // Dequeue the scanner while waiting for response
+          await dequeueUser(userId);
+          if (matchCheckerIntervals.has(userId)) {
+            clearInterval(matchCheckerIntervals.get(userId));
+            matchCheckerIntervals.delete(userId);
+          }
+
+          const currentUserProfile = await userModel.getPublicUserById(userId);
+
+          // Check for existing session (auto-connect if they already chatted)
+          const existingSession = await chatModel.getChatSessionByUsers(userId, target.id);
+          if (existingSession) {
+            const targetSocketIds = getConnectedUserSocketIds(target.id);
+            io.to(socket.id).emit('match_success', { sessionId: existingSession.id, partner: target });
+            targetSocketIds.forEach(sid => {
+              io.to(sid).emit('match_success', { sessionId: existingSession.id, partner: currentUserProfile });
+            });
+            console.log(`[Socket] Fallback: Users ${userId} & ${target.id} auto-connected to existing session ${existingSession.id}.`);
+            return;
+          }
+
+          const matchId = sessionKey;
+          const targetSocketIds = getConnectedUserSocketIds(target.id);
+          if (targetSocketIds.length === 0) return; // Target disconnected
+
+          const pendingMatch = {
+            userAId: userId,
+            userBId: target.id,
+            userASocketId: socket.id,
+            userBSocketId: targetSocketIds[0], // primary socket
+            topic: normalizedTopic,
+            acceptedBy: new Set(),
+            isDirectRequest: true,
+            timeoutId: setTimeout(() => {
+              const m = pendingMatches.get(matchId);
+              if (m) {
+                io.to(m.userASocketId).emit('match_cancelled', { matchId, reason: 'timeout' });
+                // Notify all target sockets
+                const tSockets = getConnectedUserSocketIds(target.id);
+                tSockets.forEach(sid => {
+                  io.to(sid).emit('connect_request_expired', { matchId });
+                });
+                pendingMatches.delete(matchId);
+                console.log(`[Socket] Direct request ${matchId} timed out.`);
+              }
+            }, 30000)
+          };
+
+          pendingMatches.set(matchId, pendingMatch);
+
+          // Scanner gets the pending UI
+          socket.emit('match_pending', {
+            matchId,
+            partnerName: target.name,
+            partnerProfilePic: target.profile_pic,
+            isDirectRequest: true,
+          });
+
+          // The scanner auto-accepts (they initiated the scan)
+          pendingMatch.acceptedBy.add(userId);
+
+          // Target gets a connect request alert
+          targetSocketIds.forEach(sid => {
+            io.to(sid).emit('connect_request', {
+              matchId,
+              requesterName: currentUserProfile.name,
+              requesterProfilePic: currentUserProfile.profile_pic,
+              requesterId: userId,
+            });
+          });
+
+          console.log(`[Socket] Fallback: Sent connect request from ${userId} to active user ${target.id}.`);
+        };
+
+        await attemptActiveUserFallback();
+
+      }, FALLBACK_DELAY_MS);
+
+      fallbackTimers.set(userId, fallbackTimer);
     });
+
     socket.on('chat:accept', async ({ matchId }) => {
       try {
         const user = await ensureUser();
@@ -235,6 +380,15 @@ module.exports = (io) => {
 
           io.to(match.userASocketId).emit('match_success', { sessionId, partner: userBProfile });
           io.to(match.userBSocketId).emit('match_success', { sessionId, partner: userAProfile });
+
+          // For direct requests, also clear connect_request from all target sockets
+          if (match.isDirectRequest) {
+            const targetSocketIds = getConnectedUserSocketIds(match.userBId);
+            targetSocketIds.forEach(sid => {
+              io.to(sid).emit('connect_request_resolved', { matchId });
+            });
+          }
+
           console.log(`[Socket] Match ${matchId} completed. Session ${sessionId} created.`);
         }
       } catch (error) {
@@ -255,12 +409,26 @@ module.exports = (io) => {
       io.to(match.userASocketId).emit('match_cancelled', { matchId, reason: 'declined' });
       io.to(match.userBSocketId).emit('match_cancelled', { matchId, reason: 'declined' });
 
-      // Re-enqueue the non-declining user
+      // For direct requests, clear the connect_request from all target sockets
+      if (match.isDirectRequest) {
+        const targetSocketIds = getConnectedUserSocketIds(match.userBId);
+        targetSocketIds.forEach(sid => {
+          io.to(sid).emit('connect_request_resolved', { matchId });
+        });
+      }
+
+      // Re-enqueue the non-declining user (only if they were a scanner, not an active-user target)
       const otherUserId = match.userAId === user.id ? match.userBId : match.userAId;
       const otherSocketId = match.userAId === user.id ? match.userBSocketId : match.userASocketId;
       
-      console.log(`[Socket] User ${user.id} declined match ${matchId}. Re-enqueuing user ${otherUserId}.`);
-      await enqueueUser(otherUserId, otherSocketId, match.topic);
+      if (!match.isDirectRequest || otherUserId === match.userAId) {
+        // Re-enqueue: for scanner-scanner, always re-enqueue the other.
+        // For direct requests, re-enqueue the scanner (userA) if the target (userB) declined.
+        console.log(`[Socket] User ${user.id} declined match ${matchId}. Re-enqueuing user ${otherUserId}.`);
+        await enqueueUser(otherUserId, otherSocketId, match.topic);
+      } else {
+        console.log(`[Socket] User ${user.id} (scanner) declined match ${matchId}. Not re-enqueuing target.`);
+      }
     });
 
     socket.on('chat:join', async ({ sessionId } = {}) => {
@@ -375,6 +543,10 @@ module.exports = (io) => {
         clearInterval(matchCheckerIntervals.get(user.id));
         matchCheckerIntervals.delete(user.id);
       }
+      if (fallbackTimers.has(user.id)) {
+        clearTimeout(fallbackTimers.get(user.id));
+        fallbackTimers.delete(user.id);
+      }
     });
 
     socket.on('disconnect', async () => {
@@ -387,6 +559,10 @@ module.exports = (io) => {
       if (matchCheckerIntervals.has(user.id)) {
         clearInterval(matchCheckerIntervals.get(user.id));
         matchCheckerIntervals.delete(user.id);
+      }
+      if (fallbackTimers.has(user.id)) {
+        clearTimeout(fallbackTimers.get(user.id));
+        fallbackTimers.delete(user.id);
       }
     });
   });

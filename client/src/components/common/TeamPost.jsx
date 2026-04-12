@@ -113,21 +113,20 @@ const TeamPost = ({ team }) => {
           type="button"
           className="btn-primary"
           style={{
-            padding: '14px 28px',
-            fontSize: '1rem',
-            borderRadius: '14px',
+            padding: '8px 18px',
+            fontSize: '0.84rem',
+            borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             background: 'linear-gradient(135deg, #863bff 0%, #6320c9 100%)',
             color: '#fff',
             border: 'none',
-            boxShadow: '0 8px 24px rgba(134, 59, 255, 0.25)',
           }}
           onClick={handleChat}
           disabled={chatLoading}
         >
-          <MessageSquare size={18} />
+          <MessageSquare size={14} />
           {chatLoading ? 'Opening...' : 'Chat'}
         </button>
         <button

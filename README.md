@@ -1,6 +1,6 @@
 # Campus Unifyr — BMSCE Team Discovery & Collaboration
 
-![Campus Unifyr Banner](banner.png)
+![Campus Unifyr Networking](networking_promo.png)
 
 > **Accelerate Collaboration. Innovate Together.**  
 > The premier team-finding and event discovery platform for **BMS College of Engineering** students.
@@ -23,6 +23,8 @@
 -   🎭 **Event Hub:** Discover live BMSCE campus events, hackathons, and cultural performances in one unified dashboard.
 -   🛡️ **Campus Security:** Exclusive access for `@bmsce.ac.in` emails, secured by **Clerk**.
 -   🚀 **PWA Support:** Install Unifyr on your mobile device for a native-like campus experience.
+
+![Campus Events Promotion](events_promo.png)
 
 ---
 

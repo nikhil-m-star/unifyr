@@ -18,6 +18,7 @@ import RadarView from './views/RadarView';
 import { getApiOrigin } from './api/axios';
 import { NotificationProvider, useNotifications } from './context/NotificationContext';
 import useIsMobile from './hooks/useIsMobile';
+import { applySeo } from './seo';
 
 const ProtectedRoute = ({ children }) => (
   <>
@@ -26,61 +27,7 @@ const ProtectedRoute = ({ children }) => (
   </>
 );
 
-const SITE_NAME = 'Campus Unifyr';
 
-const upsertMeta = ({ selector, attributes }) => {
-  let tag = document.head.querySelector(selector);
-  if (!tag) {
-    tag = document.createElement('meta');
-    Object.entries(attributes).forEach(([key, value]) => {
-      if (key !== 'content') tag.setAttribute(key, value);
-    });
-    document.head.appendChild(tag);
-  }
-  if (attributes.content) tag.setAttribute('content', attributes.content);
-};
-
-const setCanonical = (href) => {
-  let canonical = document.head.querySelector('link[rel="canonical"]');
-  if (!canonical) {
-    canonical = document.createElement('link');
-    canonical.setAttribute('rel', 'canonical');
-    document.head.appendChild(canonical);
-  }
-  canonical.setAttribute('href', href);
-};
-
-const seoConfigForPath = (pathname) => {
-  if (pathname === '/events/active') {
-    return {
-      title: 'Active Events | Campus Unifyr',
-      description: 'Browse live campus events, competitions, workshops, and performances at BMSCE on Campus Unifyr.',
-      robots: 'index, follow',
-    };
-  }
-
-  if (pathname === '/recommendations') {
-    return {
-      title: 'Event Recommendations | Campus Unifyr',
-      description: 'Get AI-powered campus event recommendations based on your interests and discover the best activities for you.',
-      robots: 'index, follow',
-    };
-  }
-
-  if (pathname.startsWith('/auth') || pathname.startsWith('/manage') || pathname.startsWith('/messages') || pathname.startsWith('/notifications') || pathname.startsWith('/admin')) {
-    return {
-      title: `${SITE_NAME} — Find Your Dream Team`,
-      description: 'Campus Unifyr — The premium campus collaboration platform. Find teammates and discover events.',
-      robots: 'noindex, nofollow',
-    };
-  }
-
-  return {
-    title: `${SITE_NAME} — Find Your Dream Team`,
-    description: 'Campus Unifyr — The premium campus collaboration platform. Find teammates, discover events, and build winning projects together.',
-    robots: 'index, follow',
-  };
-};
 
 const AppContent = () => {
   const [homeRefreshToken, setHomeRefreshToken] = useState(0);
@@ -117,50 +64,7 @@ const AppContent = () => {
   }, [isLoaded, isSignedIn, user, signOut]);
 
   useEffect(() => {
-    const { title, description, robots } = seoConfigForPath(location.pathname);
-    const origin = window.location.origin;
-    const canonicalUrl = `${origin}${location.pathname}`;
-    const socialImage = `${origin}/favicon.svg`;
-
-    document.title = title;
-    setCanonical(canonicalUrl);
-
-    upsertMeta({
-      selector: 'meta[name="description"]',
-      attributes: { name: 'description', content: description },
-    });
-    upsertMeta({
-      selector: 'meta[name="robots"]',
-      attributes: { name: 'robots', content: robots },
-    });
-    upsertMeta({
-      selector: 'meta[property="og:title"]',
-      attributes: { property: 'og:title', content: title },
-    });
-    upsertMeta({
-      selector: 'meta[property="og:description"]',
-      attributes: { property: 'og:description', content: description },
-    });
-    upsertMeta({
-      selector: 'meta[property="og:url"]',
-      attributes: { property: 'og:url', content: canonicalUrl },
-    });
-    upsertMeta({
-      selector: 'meta[property="og:image"]',
-      attributes: { property: 'og:image', content: socialImage },
-    });
-    upsertMeta({
-      selector: 'meta[name="twitter:title"]',
-      attributes: { name: 'twitter:title', content: title },
-    });
-    upsertMeta({
-      selector: 'meta[name="twitter:description"]',
-      attributes: { name: 'twitter:description', content: description },
-    });
-    upsertMeta({
-      selector: 'meta[name="twitter:image"]',
-      attributes: { name: 'twitter:image', content: socialImage },
-    });
+    applySeo(location.pathname);
   }, [location.pathname]);
 
   useEffect(() => {

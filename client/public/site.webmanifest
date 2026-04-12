@@ -1,0 +1,22 @@
+{
+  "name": "Campus Unifyr",
+  "short_name": "Unifyr",
+  "description": "Find teammates for hackathons and events at BMSCE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050209",
+  "theme_color": "#863bff",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "social", "utilities"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "orientation": "any",
+  "scope": "/"
+}

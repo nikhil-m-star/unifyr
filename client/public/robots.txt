@@ -1,9 +1,16 @@
 User-agent: *
 Allow: /
+Allow: /events/active
+Allow: /recommendations
 Disallow: /auth
+Disallow: /auth/
 Disallow: /manage
 Disallow: /messages
+Disallow: /messages/
 Disallow: /notifications
 Disallow: /admin
-
+Disallow: /ready
+Disallow: /api/
+Disallow: /_vercel/
+Crawl-delay: 5
 Sitemap: https://campusunifyr.vercel.app/sitemap.xml
